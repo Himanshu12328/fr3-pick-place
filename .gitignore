@@ -1,0 +1,25 @@
+@"
+# Virtual environment
+.venv/
+
+# Third-party assets
+mujoco_menagerie/
+
+# Data and outputs — large, regenerable
+data/
+outputs/
+logs/
+wandb/
+
+# Generated scene (rebuild with build_scene.py)
+models/
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+
+# Editor
+.vscode/
+.idea/
+"@ | Out-File -FilePath .gitignore -Encoding utf8
