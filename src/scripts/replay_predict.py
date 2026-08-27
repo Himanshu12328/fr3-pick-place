@@ -111,8 +111,10 @@ def report_errors(pred, rec, ep_name):
     grasp, release = phase_bounds(rec)
 
     print(f"\n{ep_name}  ({len(rec)} frames)")
-    print(f"  position error   mean {pos_err.mean():6.1f} mm   "
-          f"median {np.median(pos_err):6.1f}   max {pos_err.max():6.1f}")
+    print(
+        f"  position error   mean {pos_err.mean():6.1f} mm   "
+        f"median {np.median(pos_err):6.1f}   max {pos_err.max():6.1f}"
+    )
 
     for i, ax in enumerate(AXES):
         e = (pred[:, i] - rec[:, i]) * 1000
@@ -136,9 +138,11 @@ def report_errors(pred, rec, ep_name):
         if pred_closed.any():
             pred_grasp = int(np.argmax(pred_closed))
             lag = pred_grasp - grasp
-            print(f"  gripper closes at frame {pred_grasp}, "
-                  f"recorded {grasp}, lag {lag:+d} frames "
-                  f"({lag / 30:+.2f} s)")
+            print(
+                f"  gripper closes at frame {pred_grasp}, "
+                f"recorded {grasp}, lag {lag:+d} frames "
+                f"({lag / 30:+.2f} s)"
+            )
         else:
             print("  gripper never closes in the prediction")
 
@@ -183,8 +187,10 @@ def plot_comparison(pred, rec, ep_name, path):
     ax.set_xlabel("frame")
     ax.grid(alpha=0.3)
 
-    fig.suptitle(f"{ep_name}: predicted vs recorded actions "
-                 f"(dotted lines mark grasp and release)")
+    fig.suptitle(
+        f"{ep_name}: predicted vs recorded actions "
+        f"(dotted lines mark grasp and release)"
+    )
 
     os.makedirs(os.path.dirname(path), exist_ok=True)
     fig.savefig(path, dpi=120, bbox_inches="tight")
@@ -207,13 +213,14 @@ def main():
     parser.add_argument("--start", type=int, default=0)
     args = parser.parse_args()
 
-    ckpt = os.path.join(OUTPUT_ROOT, args.run, "checkpoints",
-                        args.checkpoint, "pretrained_model")
+    ckpt = os.path.join(
+        OUTPUT_ROOT, args.run, "checkpoints", args.checkpoint, "pretrained_model"
+    )
     policy, pre, post = load_policy_and_processors(ckpt, args.type)
     adapter = LeRobotPolicyAdapter(policy, pre, post, task=TASK)
 
     names = sorted(d for d in os.listdir(RAW_DIR) if d.startswith("episode_"))
-    chosen = names[args.start:args.start + args.episodes]
+    chosen = names[args.start : args.start + args.episodes]
 
     for ep_name in chosen:
         ep_dir = os.path.join(RAW_DIR, ep_name)
@@ -221,9 +228,12 @@ def main():
         pred = predict_trajectory(adapter, ep_dir, len(rec))
 
         report_errors(pred, rec, ep_name)
-        plot_comparison(pred, rec, ep_name,
-                        os.path.join(LOG_DIR,
-                                     f"replay_{args.run}_{args.checkpoint}_{ep_name}.png"))
+        plot_comparison(
+            pred,
+            rec,
+            ep_name,
+            os.path.join(LOG_DIR, f"replay_{args.run}_{args.checkpoint}_{ep_name}.png"),
+        )
 
 
 if __name__ == "__main__":

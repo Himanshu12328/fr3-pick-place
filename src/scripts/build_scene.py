@@ -23,19 +23,19 @@ MENAGERIE_FR3 = FR3_DIR
 OUT_PATH = str(SCENE_PATH)
 
 # Scene geometry, all in metres. Edit these to move things around.
-TABLE_CENTER = (0.55, 0.0, 0.20)   # centre of the table box
-TABLE_HALF = (0.30, 0.40, 0.20)    # half-extents, so top surface is at z=0.40
-BLOCK_HALF = 0.022                 # half-edge of the cube to grasp
-BLOCK_START = (0.55, 0.0)          # x, y of the block on the table
+TABLE_CENTER = (0.55, 0.0, 0.20)  # centre of the table box
+TABLE_HALF = (0.30, 0.40, 0.20)  # half-extents, so top surface is at z=0.40
+BLOCK_HALF = 0.022  # half-edge of the cube to grasp
+BLOCK_START = (0.55, 0.0)  # x, y of the block on the table
 
-FINGER_TRAVEL = 0.04               # metres each finger can slide
-FINGER_LENGTH = 0.055              # how far the fingers extend past the palm
+FINGER_TRAVEL = 0.04  # metres each finger can slide
+FINGER_LENGTH = 0.055  # how far the fingers extend past the palm
 
 # Intel RealSense D405 approximate intrinsics. The D405 is the usual choice
 # for wrist mounting in manipulation work because its minimum range is about
 # 7 cm, where a D435 cannot focus. fovy is the vertical field of view in
 # degrees, which is what MuJoCo's camera element takes.
-RS_FOVY = 58          # D405 vertical FOV; use 42 to emulate a D435
+RS_FOVY = 58  # D405 vertical FOV; use 42 to emulate a D435
 RS_WIDTH = 640
 RS_HEIGHT = 480
 
@@ -220,7 +220,7 @@ def rewrite_keyframe(root, n_arm, n_finger, block_pos):
         qpos = key.get("qpos", "").split()
         arm = qpos[:n_arm] if len(qpos) >= n_arm else ["0"] * n_arm
 
-        fingers = [f"{FINGER_TRAVEL:.4f}"] * n_finger   # start open
+        fingers = [f"{FINGER_TRAVEL:.4f}"] * n_finger  # start open
         block = [f"{v:.4f}" for v in block_pos] + ["1", "0", "0", "0"]
 
         key.set("qpos", " ".join(arm + fingers + block))
@@ -281,8 +281,11 @@ def build():
         worldbody.append(elem)
     worldbody.append(block_xml())
 
-    block_pos = (BLOCK_START[0], BLOCK_START[1],
-                 TABLE_CENTER[2] + TABLE_HALF[2] + BLOCK_HALF)
+    block_pos = (
+        BLOCK_START[0],
+        BLOCK_START[1],
+        TABLE_CENTER[2] + TABLE_HALF[2] + BLOCK_HALF,
+    )
     rewrite_keyframe(root, n_arm=7, n_finger=2, block_pos=block_pos)
 
     os.makedirs(os.path.dirname(OUT_PATH), exist_ok=True)
@@ -313,8 +316,10 @@ def verify(path):
         mujoco.mj_resetDataKeyframe(model, data, kid)
     mujoco.mj_forward(model, data)
 
-    print(f"\nnq={model.nq}  nv={model.nv}  nu={model.nu}  "
-          f"nbody={model.nbody}  ncam={model.ncam}")
+    print(
+        f"\nnq={model.nq}  nv={model.nv}  nu={model.nu}  "
+        f"nbody={model.nbody}  ncam={model.ncam}"
+    )
 
     print("\nJoints:")
     for i in range(model.njnt):
@@ -326,7 +331,9 @@ def verify(path):
     block_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "block")
     print(f"\ntcp at home:  {np.round(data.site_xpos[tcp_id], 4)}")
     print(f"block at:     {np.round(data.xpos[block_id], 4)}")
-    print(f"reach needed: {np.linalg.norm(data.site_xpos[tcp_id] - data.xpos[block_id]):.3f} m")
+    print(
+        f"reach needed: {np.linalg.norm(data.site_xpos[tcp_id] - data.xpos[block_id]):.3f} m"
+    )
 
 
 def main():

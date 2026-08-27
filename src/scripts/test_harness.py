@@ -91,18 +91,29 @@ def replay_episode(ep_name, verbose=True):
         meta = json.load(f)
 
     model, data = setup_model()
-    ctrl = ImpedanceController(model, data,
-                               kp_trans=KP_TRANS, kp_rot=KP_ROT, zeta=ZETA,
-                               kp_null=10.0, zeta_null=1.0,
-                               n_arm=N_ARM, verbose=False)
+    ctrl = ImpedanceController(
+        model,
+        data,
+        kp_trans=KP_TRANS,
+        kp_rot=KP_ROT,
+        zeta=ZETA,
+        kp_null=10.0,
+        zeta_null=1.0,
+        n_arm=N_ARM,
+        verbose=False,
+    )
 
     kid = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_KEY, "home")
     mujoco.mj_resetDataKeyframe(model, data, kid)
 
-    set_block_pose(model, data,
-                   np.array(meta["block_start_pos"]),
-                   np.array(meta["block_start_quat"]),
-                   BLOCK_QPOS_ADR, BLOCK_QVEL_ADR)
+    set_block_pose(
+        model,
+        data,
+        np.array(meta["block_start_pos"]),
+        np.array(meta["block_start_quat"]),
+        BLOCK_QPOS_ADR,
+        BLOCK_QVEL_ADR,
+    )
     mujoco.mj_forward(model, data)
 
     pos, quat = ctrl.current_pose(data)
@@ -125,8 +136,10 @@ def replay_episode(ep_name, verbose=True):
 
     if verbose:
         mark = "ok  " if success else "FAIL"
-        print(f"  {ep_name}  {mark}  {len(actions):4d} steps  "
-              f"dist {dist*100:5.1f} cm  (recorded: {meta['success']})")
+        print(
+            f"  {ep_name}  {mark}  {len(actions):4d} steps  "
+            f"dist {dist * 100:5.1f} cm  (recorded: {meta['success']})"
+        )
 
     return {"success": success, "steps": len(actions), "distance": dist}
 

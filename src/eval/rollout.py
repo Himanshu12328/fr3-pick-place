@@ -49,7 +49,7 @@ GRIP_KP, GRIP_KD = 300.0, 15.0
 WORKSPACE_MIN = np.array([0.25, -0.35, 0.405])
 WORKSPACE_MAX = np.array([0.85, 0.35, 0.85])
 
-MAX_POLICY_STEPS = 600   # 20 s at 30 Hz; demos average 343
+MAX_POLICY_STEPS = 600  # 20 s at 30 Hz; demos average 343
 
 
 def setup_model(path=MODEL_PATH):
@@ -94,11 +94,13 @@ def build_state(data):
     input:  data (MjData)
     output: numpy array of shape (16,) float32
     """
-    return np.concatenate([
-        data.qpos[:N_ARM],
-        data.qvel[:N_ARM],
-        data.qpos[FINGER_DOFS],
-    ]).astype(np.float32)
+    return np.concatenate(
+        [
+            data.qpos[:N_ARM],
+            data.qvel[:N_ARM],
+            data.qpos[FINGER_DOFS],
+        ]
+    ).astype(np.float32)
 
 
 def render_all(renderer, data, camera_names=CAMERAS):
@@ -148,8 +150,7 @@ def reset_trial(model, data, ctrl, rng):
         mujoco.mj_resetData(model, data)
 
     block_pos, block_quat = sample_block_pose(rng)
-    set_block_pose(model, data, block_pos, block_quat,
-                   BLOCK_QPOS_ADR, BLOCK_QVEL_ADR)
+    set_block_pose(model, data, block_pos, block_quat, BLOCK_QPOS_ADR, BLOCK_QVEL_ADR)
     mujoco.mj_forward(model, data)
 
     pos, quat = ctrl.current_pose(data)
@@ -158,9 +159,17 @@ def reset_trial(model, data, ctrl, rng):
     return block_pos, block_quat
 
 
-def run_trial(model, data, ctrl, policy, renderer, rng,
-              max_steps=MAX_POLICY_STEPS, need_images=True,
-              record_frames=False):
+def run_trial(
+    model,
+    data,
+    ctrl,
+    policy,
+    renderer,
+    rng,
+    max_steps=MAX_POLICY_STEPS,
+    need_images=True,
+    record_frames=False,
+):
     """
     Runs one episode and returns whether the task was completed.
 
@@ -186,7 +195,7 @@ def run_trial(model, data, ctrl, policy, renderer, rng,
     frames = []
     success = False
 
-    for step in range(max_steps):
+    for step in range(max_steps):  # noqa: B007 - step is used after the loop
         obs = build_observation(data, renderer, CAMERAS, need_images)
         action = np.asarray(policy(obs), dtype=np.float64)
 
@@ -220,8 +229,9 @@ def run_trial(model, data, ctrl, policy, renderer, rng,
     }
 
 
-def evaluate(policy, n_trials=50, seed=0, need_images=True,
-             save_video_dir=None, verbose=True):
+def evaluate(
+    policy, n_trials=50, seed=0, need_images=True, save_video_dir=None, verbose=True
+):
     """
     Runs n_trials randomised episodes and reports the success rate.
 
@@ -235,10 +245,17 @@ def evaluate(policy, n_trials=50, seed=0, need_images=True,
     output: dict with success_rate, results list, and timing
     """
     model, data = setup_model()
-    ctrl = ImpedanceController(model, data,
-                               kp_trans=KP_TRANS, kp_rot=KP_ROT, zeta=ZETA,
-                               kp_null=10.0, zeta_null=1.0,
-                               n_arm=N_ARM, verbose=False)
+    ctrl = ImpedanceController(
+        model,
+        data,
+        kp_trans=KP_TRANS,
+        kp_rot=KP_ROT,
+        zeta=ZETA,
+        kp_null=10.0,
+        zeta_null=1.0,
+        n_arm=N_ARM,
+        verbose=False,
+    )
     rng = np.random.default_rng(seed)
 
     renderer = None
@@ -252,16 +269,25 @@ def evaluate(policy, n_trials=50, seed=0, need_images=True,
         if hasattr(policy, "reset"):
             policy.reset()
 
-        r = run_trial(model, data, ctrl, policy, renderer, rng,
-                      need_images=need_images,
-                      record_frames=save_video_dir is not None)
+        r = run_trial(
+            model,
+            data,
+            ctrl,
+            policy,
+            renderer,
+            rng,
+            need_images=need_images,
+            record_frames=save_video_dir is not None,
+        )
         results.append(r)
 
         if verbose:
             mark = "ok  " if r["success"] else "FAIL"
-            print(f"  trial {i:3d}  {mark}  {r['steps']:4d} steps  "
-                  f"dist {r['distance']*100:5.1f} cm  "
-                  f"block {np.round(r['block_start'][:2], 3)}")
+            print(
+                f"  trial {i:3d}  {mark}  {r['steps']:4d} steps  "
+                f"dist {r['distance'] * 100:5.1f} cm  "
+                f"block {np.round(r['block_start'][:2], 3)}"
+            )
 
         if save_video_dir and r["frames"]:
             save_video(r["frames"], save_video_dir, i, r["success"])
@@ -275,11 +301,13 @@ def evaluate(policy, n_trials=50, seed=0, need_images=True,
 
     if verbose:
         succ_steps = [r["steps"] for r in results if r["success"]]
-        print(f"\nsuccess rate: {n_success}/{n_trials} = {rate*100:.1f}%")
+        print(f"\nsuccess rate: {n_success}/{n_trials} = {rate * 100:.1f}%")
         if succ_steps:
-            print(f"steps on success: mean {np.mean(succ_steps):.0f}, "
-                  f"min {min(succ_steps)}, max {max(succ_steps)}")
-        print(f"elapsed: {elapsed:.1f} s ({elapsed/n_trials:.1f} s/trial)")
+            print(
+                f"steps on success: mean {np.mean(succ_steps):.0f}, "
+                f"min {min(succ_steps)}, max {max(succ_steps)}"
+            )
+        print(f"elapsed: {elapsed:.1f} s ({elapsed / n_trials:.1f} s/trial)")
 
     return {"success_rate": rate, "results": results, "elapsed_s": elapsed}
 

@@ -31,8 +31,10 @@ def camera_names(model):
     input:  model (MjModel)
     output: list of str
     """
-    return [mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_CAMERA, i)
-            for i in range(model.ncam)]
+    return [
+        mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_CAMERA, i)
+        for i in range(model.ncam)
+    ]
 
 
 def render_all(model, data, width=WIDTH, height=HEIGHT):
@@ -66,7 +68,7 @@ def save_grid(frames, path):
     if n == 1:
         axes = [axes]
 
-    for ax, (name, img) in zip(axes, frames.items()):
+    for ax, (name, img) in zip(axes, frames.items(), strict=True):
         ax.imshow(img)
         ax.set_title(name)
         ax.axis("off")

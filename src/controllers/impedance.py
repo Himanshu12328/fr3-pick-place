@@ -104,9 +104,9 @@ def mass_matrix(model, data, buf):
         return src.reshape(model.nv, model.nv)
 
     try:
-        mujoco.mj_fullM(model, data, buf)   # current: reads sparse from data
+        mujoco.mj_fullM(model, data, buf)  # current: reads sparse from data
     except TypeError:
-        mujoco.mj_fullM(model, buf, src)    # legacy: sparse passed explicitly
+        mujoco.mj_fullM(model, buf, src)  # legacy: sparse passed explicitly
 
     return buf
 
@@ -163,10 +163,18 @@ class ImpedanceController:
     model.
     """
 
-    def __init__(self, model, data,
-                 kp_trans=300.0, kp_rot=30.0, zeta=1.0,
-                 kp_null=10.0, zeta_null=1.0,
-                 n_arm=7, verbose=True):
+    def __init__(
+        self,
+        model,
+        data,
+        kp_trans=300.0,
+        kp_rot=30.0,
+        zeta=1.0,
+        kp_null=10.0,
+        zeta_null=1.0,
+        n_arm=7,
+        verbose=True,
+    ):
         """
         Sets up the controller and captures the current joint configuration
         as the rest posture.
@@ -187,8 +195,8 @@ class ImpedanceController:
         output: ImpedanceController instance
         """
         self.model = model
-        self.nv = model.nv          # full model DOF count, for buffer sizing
-        self.n_arm = n_arm          # arm DOFs, always the leading block
+        self.nv = model.nv  # full model DOF count, for buffer sizing
+        self.n_arm = n_arm  # arm DOFs, always the leading block
         self.arm_dofs = np.arange(n_arm)
 
         self.ee_kind, self.ee_id = resolve_ee_frame(model, verbose)
@@ -198,7 +206,7 @@ class ImpedanceController:
         self.kp_null = kp_null
         self.zeta_null = zeta_null
 
-        self.q_rest = data.qpos[:self.n_arm].copy()
+        self.q_rest = data.qpos[: self.n_arm].copy()
 
         # Preallocated buffers. Allocating inside a 1 kHz loop is wasteful
         # and creates garbage-collection jitter. Jacobian buffers are full
@@ -300,15 +308,14 @@ class ImpedanceController:
         Lambda, Jbar, M_inv = self.task_space_inertia(data, J)
 
         # 6-vector pose error: translation then rotation
-        err = np.concatenate([self.x_des - pos,
-                              orientation_error(self.quat_des, quat)])
+        err = np.concatenate([self.x_des - pos, orientation_error(self.quat_des, quat)])
 
         # Damping scaled by apparent inertia keeps the damping ratio at
         # self.zeta regardless of arm configuration.
         lam_diag = np.clip(np.diag(Lambda), 1e-6, None)
         kd_diag = 2.0 * self.zeta * np.sqrt(lam_diag * self.kp_diag)
 
-        ee_vel = J @ data.qvel[:self.n_arm]
+        ee_vel = J @ data.qvel[: self.n_arm]
         wrench = self.kp_diag * err - kd_diag * ee_vel
         tau_task = J.T @ wrench
 
@@ -316,16 +323,22 @@ class ImpedanceController:
         # N = I - J^T Jbar^T so it produces zero end-effector wrench.
         N = np.eye(self.n_arm) - J.T @ Jbar.T
         kd_null = 2.0 * self.zeta_null * np.sqrt(self.kp_null)
-        tau_posture = (self.kp_null * (self.q_rest - data.qpos[:self.n_arm])
-                       - kd_null * data.qvel[:self.n_arm])
+        tau_posture = (
+            self.kp_null * (self.q_rest - data.qpos[: self.n_arm])
+            - kd_null * data.qvel[: self.n_arm]
+        )
         tau_null = N @ tau_posture
 
-        tau = (tau_task + tau_null
-               + data.qfrc_bias[:self.n_arm]
-               - data.qfrc_passive[:self.n_arm])
+        tau = (
+            tau_task
+            + tau_null
+            + data.qfrc_bias[: self.n_arm]
+            - data.qfrc_passive[: self.n_arm]
+        )
 
-        return np.clip(tau, -FR3_TORQUE_LIMITS[:self.n_arm],
-                       FR3_TORQUE_LIMITS[:self.n_arm])
+        return np.clip(
+            tau, -FR3_TORQUE_LIMITS[: self.n_arm], FR3_TORQUE_LIMITS[: self.n_arm]
+        )
 
     def set_target(self, pos=None, quat=None):
         """

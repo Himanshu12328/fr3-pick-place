@@ -27,8 +27,9 @@ POLICY_CLASSES = {
 }
 
 
-def load_policy_and_processors(checkpoint_dir, policy_type="diffusion",
-                               device="cuda", n_action_steps=None):
+def load_policy_and_processors(
+    checkpoint_dir, policy_type="diffusion", device="cuda", n_action_steps=None
+):
     """
     Loads the policy weights and both processor pipelines from a
     checkpoint directory.
@@ -59,7 +60,8 @@ def load_policy_and_processors(checkpoint_dir, policy_type="diffusion",
     policy.eval()
 
     preprocessor, postprocessor = make_pre_post_processors(
-        policy.config, pretrained_path=checkpoint_dir)
+        policy.config, pretrained_path=checkpoint_dir
+    )
 
     print(f"Loaded {policy_type} with processors from {checkpoint_dir}")
     return policy, preprocessor, postprocessor
@@ -71,8 +73,7 @@ class LeRobotPolicyAdapter:
     policy(obs) -> action(8,) interface.
     """
 
-    def __init__(self, policy, preprocessor, postprocessor,
-                 device="cuda", task=None):
+    def __init__(self, policy, preprocessor, postprocessor, device="cuda", task=None):
         """
         input:  policy (LeRobot policy), preprocessor, postprocessor,
                 device (str),

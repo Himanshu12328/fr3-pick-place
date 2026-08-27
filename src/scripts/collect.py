@@ -53,7 +53,7 @@ CAM_WIDTH, CAM_HEIGHT = 640, 480
 
 RECORD_FPS = 30
 CONTROL_HZ = 1000
-RECORD_EVERY = CONTROL_HZ // RECORD_FPS   # 33 sim steps per recorded frame
+RECORD_EVERY = CONTROL_HZ // RECORD_FPS  # 33 sim steps per recorded frame
 
 # Transit gain set from the damping sweep: 1.5 Hz bandwidth, 2.9% overshoot.
 KP_TRANS, KP_ROT, ZETA = 800.0, 60.0, 0.7
@@ -62,7 +62,7 @@ GRIP_KP, GRIP_KD = 300.0, 15.0
 WORKSPACE_MIN = np.array([0.25, -0.35, 0.405])
 WORKSPACE_MAX = np.array([0.85, 0.35, 0.85])
 
-MAX_EPISODE_S = 60.0   # safety cap so a forgotten recording cannot fill disk
+MAX_EPISODE_S = 60.0  # safety cap so a forgotten recording cannot fill disk
 
 
 def setup_model(path):
@@ -102,8 +102,7 @@ def reset_episode(model, data, rng, ctrl, pad):
         mujoco.mj_resetData(model, data)
 
     block_pos, block_quat = sample_block_pose(rng)
-    set_block_pose(model, data, block_pos, block_quat,
-                   BLOCK_QPOS_ADR, BLOCK_QVEL_ADR)
+    set_block_pose(model, data, block_pos, block_quat, BLOCK_QPOS_ADR, BLOCK_QVEL_ADR)
     mujoco.mj_forward(model, data)
 
     pos, quat = ctrl.current_pose(data)
@@ -138,11 +137,13 @@ def build_state(data):
     input:  data (MjData)
     output: numpy array of shape (16,) float32
     """
-    return np.concatenate([
-        data.qpos[:N_ARM],
-        data.qvel[:N_ARM],
-        data.qpos[FINGER_DOFS],
-    ]).astype(np.float32)
+    return np.concatenate(
+        [
+            data.qpos[:N_ARM],
+            data.qvel[:N_ARM],
+            data.qpos[FINGER_DOFS],
+        ]
+    ).astype(np.float32)
 
 
 def build_action(x_des, quat_des, gripper):
@@ -182,8 +183,9 @@ def draw_overlay(viewer, target_pos, recording):
             recording (bool)
     output: None
     """
-    rgba = (np.array([1.0, 0.2, 0.2, 0.7]) if recording
-            else np.array([0.2, 0.5, 1.0, 0.5]))
+    rgba = (
+        np.array([1.0, 0.2, 0.2, 0.7]) if recording else np.array([0.2, 0.5, 1.0, 0.5])
+    )
 
     viewer.user_scn.ngeom = 0
     mujoco.mjv_initGeom(
@@ -243,11 +245,15 @@ def run(model, data, ctrl, pad, recorder, rng):
 
             if pad.button_pressed(BTN_SAVE_EP) and recorder.recording:
                 success, dist = check_success(data, block_id)
-                recorder.save(ep_index, success, extra_meta={
-                    "block_start_pos": block_pos.tolist(),
-                    "block_start_quat": block_quat.tolist(),
-                    "final_distance_m": dist,
-                })
+                recorder.save(
+                    ep_index,
+                    success,
+                    extra_meta={
+                        "block_start_pos": block_pos.tolist(),
+                        "block_start_quat": block_quat.tolist(),
+                        "final_distance_m": dist,
+                    },
+                )
                 saved += 1
                 successes += int(success)
                 ep_index += 1
@@ -280,10 +286,12 @@ def run(model, data, ctrl, pad, recorder, rng):
 
             if recorder.recording and step_count % RECORD_EVERY == 0:
                 images = render_all(renderer, data, CAMERAS)
-                recorder.add(build_state(data),
-                             build_action(x_des, quat_des, grip),
-                             images,
-                             data.time - ep_start_time)
+                recorder.add(
+                    build_state(data),
+                    build_action(x_des, quat_des, grip),
+                    images,
+                    data.time - ep_start_time,
+                )
 
             step_count += 1
 
@@ -294,10 +302,16 @@ def run(model, data, ctrl, pad, recorder, rng):
             if now - last_report > 1.0:
                 pos, _ = ctrl.current_pose(data)
                 err = np.linalg.norm(x_des - pos) * 1000.0
-                status = (f"REC {recorder.n_frames():4d}f" if recorder.recording
-                          else "idle     ")
-                print(f"\r{status}  err {err:5.1f} mm  grip {grip * 1000:4.1f} mm   ",
-                      end="", flush=True)
+                status = (
+                    f"REC {recorder.n_frames():4d}f"
+                    if recorder.recording
+                    else "idle     "
+                )
+                print(
+                    f"\r{status}  err {err:5.1f} mm  grip {grip * 1000:4.1f} mm   ",
+                    end="",
+                    flush=True,
+                )
                 last_report = now
 
             lag = data.time - (now - sim_start)
@@ -317,18 +331,33 @@ def main():
     """
     model, data = setup_model(MODEL_PATH)
 
-    ctrl = ImpedanceController(model, data,
-                               kp_trans=KP_TRANS, kp_rot=KP_ROT, zeta=ZETA,
-                               kp_null=10.0, zeta_null=1.0, n_arm=N_ARM)
+    ctrl = ImpedanceController(
+        model,
+        data,
+        kp_trans=KP_TRANS,
+        kp_rot=KP_ROT,
+        zeta=ZETA,
+        kp_null=10.0,
+        zeta_null=1.0,
+        n_arm=N_ARM,
+    )
 
     pos, quat = ctrl.current_pose(data)
-    pad = DualSenseTeleop(pos, quat, gripper_init=0.04,
-                          workspace_min=WORKSPACE_MIN,
-                          workspace_max=WORKSPACE_MAX)
+    pad = DualSenseTeleop(
+        pos,
+        quat,
+        gripper_init=0.04,
+        workspace_min=WORKSPACE_MIN,
+        workspace_max=WORKSPACE_MAX,
+    )
 
-    recorder = EpisodeRecorder(DATA_DIR, CAMERAS, fps=RECORD_FPS,
-                               workspace_min=WORKSPACE_MIN,
-                               workspace_max=WORKSPACE_MAX)
+    recorder = EpisodeRecorder(
+        DATA_DIR,
+        CAMERAS,
+        fps=RECORD_FPS,
+        workspace_min=WORKSPACE_MIN,
+        workspace_max=WORKSPACE_MAX,
+    )
     rng = np.random.default_rng()
 
     print("\nD-pad UP start   RIGHT save   DOWN discard   circle re-anchor")

@@ -76,28 +76,37 @@ def main():
     output: None
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument("--run", default="diffusion_v2",
-                        help="training run directory under outputs/")
+    parser.add_argument(
+        "--run", default="diffusion_v2", help="training run directory under outputs/"
+    )
     parser.add_argument("--checkpoint", default="020000")
-    parser.add_argument("--type", default="diffusion",
-                        help="diffusion or act; must match the run")
+    parser.add_argument(
+        "--type", default="diffusion", help="diffusion or act; must match the run"
+    )
     parser.add_argument("--trials", type=int, default=20)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--video", action="store_true")
-    parser.add_argument("--check", action="store_true",
-                        help="run the sanity check and exit")
-    parser.add_argument("--n-action-steps", type=int, default=None,
-                        help="override how many steps of each predicted chunk "
-                             "are executed before re-planning")
+    parser.add_argument(
+        "--check", action="store_true", help="run the sanity check and exit"
+    )
+    parser.add_argument(
+        "--n-action-steps",
+        type=int,
+        default=None,
+        help="override how many steps of each predicted chunk "
+        "are executed before re-planning",
+    )
     args = parser.parse_args()
 
-    ckpt = os.path.join(OUTPUT_ROOT, args.run, "checkpoints",
-                        args.checkpoint, "pretrained_model")
+    ckpt = os.path.join(
+        OUTPUT_ROOT, args.run, "checkpoints", args.checkpoint, "pretrained_model"
+    )
     if not os.path.isdir(ckpt):
         raise SystemExit(f"No checkpoint at {ckpt}")
 
-    policy, pre, post = load_policy_and_processors(ckpt, args.type, 
-                                                   n_action_steps=args.n_action_steps)
+    policy, pre, post = load_policy_and_processors(
+        ckpt, args.type, n_action_steps=args.n_action_steps
+    )
     adapter = LeRobotPolicyAdapter(policy, pre, post, task=TASK)
 
     if args.check:
@@ -108,11 +117,18 @@ def main():
     if args.video:
         video_dir = os.path.join(VIDEO_ROOT, f"{args.run}_{args.checkpoint}")
 
-    print(f"\nEvaluating {args.run} ({args.type}) @ step {args.checkpoint}, "
-          f"{args.trials} trials\n")
+    print(
+        f"\nEvaluating {args.run} ({args.type}) @ step {args.checkpoint}, "
+        f"{args.trials} trials\n"
+    )
 
-    evaluate(adapter, n_trials=args.trials, seed=args.seed,
-             need_images=True, save_video_dir=video_dir)
+    evaluate(
+        adapter,
+        n_trials=args.trials,
+        seed=args.seed,
+        need_images=True,
+        save_video_dir=video_dir,
+    )
 
 
 if __name__ == "__main__":

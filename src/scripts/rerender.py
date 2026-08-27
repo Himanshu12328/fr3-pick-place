@@ -129,10 +129,14 @@ def replay_episode(model, data, ctrl, renderer, ep_dir, cameras):
     else:
         mujoco.mj_resetData(model, data)
 
-    set_block_pose(model, data,
-                   np.array(meta["block_start_pos"]),
-                   np.array(meta["block_start_quat"]),
-                   BLOCK_QPOS_ADR, BLOCK_QVEL_ADR)
+    set_block_pose(
+        model,
+        data,
+        np.array(meta["block_start_pos"]),
+        np.array(meta["block_start_quat"]),
+        BLOCK_QPOS_ADR,
+        BLOCK_QVEL_ADR,
+    )
     mujoco.mj_forward(model, data)
 
     pos, quat = ctrl.current_pose(data)
@@ -189,7 +193,8 @@ def write_episode(dst_dir, ep_name, src_dir, frames, cameras):
         os.makedirs(cam_dir)
         for i, frame in enumerate(frames):
             Image.fromarray(frame[cam]).save(
-                os.path.join(cam_dir, f"{i:05d}.png"), compress_level=1)
+                os.path.join(cam_dir, f"{i:05d}.png"), compress_level=1
+            )
 
 
 def main():
@@ -204,8 +209,10 @@ def main():
     cameras = info["cameras"]
 
     episodes = sorted(d for d in os.listdir(SRC_DIR) if d.startswith("episode_"))
-    print(f"{len(episodes)} episodes, cameras {cameras}, "
-          f"target size {CAM_WIDTH}x{CAM_HEIGHT}\n")
+    print(
+        f"{len(episodes)} episodes, cameras {cameras}, "
+        f"target size {CAM_WIDTH}x{CAM_HEIGHT}\n"
+    )
 
     os.makedirs(DST_DIR, exist_ok=True)
 
@@ -215,24 +222,31 @@ def main():
         json.dump(info, f, indent=2)
 
     model, data = setup_model()
-    ctrl = ImpedanceController(model, data,
-                               kp_trans=KP_TRANS, kp_rot=KP_ROT, zeta=ZETA,
-                               kp_null=10.0, zeta_null=1.0,
-                               n_arm=N_ARM, verbose=False)
+    ctrl = ImpedanceController(
+        model,
+        data,
+        kp_trans=KP_TRANS,
+        kp_rot=KP_ROT,
+        zeta=ZETA,
+        kp_null=10.0,
+        zeta_null=1.0,
+        n_arm=N_ARM,
+        verbose=False,
+    )
     renderer = mujoco.Renderer(model, height=CAM_HEIGHT, width=CAM_WIDTH)
 
     start = time.perf_counter()
     drifts = []
 
     for ep_name in episodes:
-        frames, drift = replay_episode(model, data, ctrl, renderer,
-                                       os.path.join(SRC_DIR, ep_name), cameras)
+        frames, drift = replay_episode(
+            model, data, ctrl, renderer, os.path.join(SRC_DIR, ep_name), cameras
+        )
         write_episode(DST_DIR, ep_name, SRC_DIR, frames, cameras)
         drifts.append(drift)
 
         flag = "  <-- check" if drift > 0.05 else ""
-        print(f"  {ep_name}: {len(frames)} frames, joint drift "
-              f"{drift:.4f} rad{flag}")
+        print(f"  {ep_name}: {len(frames)} frames, joint drift {drift:.4f} rad{flag}")
 
     renderer.close()
 

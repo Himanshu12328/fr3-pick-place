@@ -159,8 +159,10 @@ def run(model, data, ctrl, pad):
                 pos, _ = ctrl.current_pose(data)
                 err = np.linalg.norm(x_des - pos) * 1000.0
                 bz = data.xpos[block_id][2]
-                print(f"tracking err {err:6.1f} mm   grip {grip*1000:4.1f} mm   "
-                      f"block z {bz:.3f}")
+                print(
+                    f"tracking err {err:6.1f} mm   grip {grip * 1000:4.1f} mm   "
+                    f"block z {bz:.3f}"
+                )
                 last_report = now
 
             lag = data.time - (now - sim_start)
@@ -178,14 +180,25 @@ def main():
     model, data = setup_model(MODEL_PATH)
     reset_scene(model, data)
 
-    ctrl = ImpedanceController(model, data,
-                               kp_trans=KP_TRANS, kp_rot=KP_ROT, zeta=ZETA,
-                               kp_null=10.0, zeta_null=1.0, n_arm=N_ARM)
+    ctrl = ImpedanceController(
+        model,
+        data,
+        kp_trans=KP_TRANS,
+        kp_rot=KP_ROT,
+        zeta=ZETA,
+        kp_null=10.0,
+        zeta_null=1.0,
+        n_arm=N_ARM,
+    )
 
     pos, quat = ctrl.current_pose(data)
-    pad = DualSenseTeleop(pos, quat, gripper_init=0.04,
-                          workspace_min=WORKSPACE_MIN,
-                          workspace_max=WORKSPACE_MAX)
+    pad = DualSenseTeleop(
+        pos,
+        quat,
+        gripper_init=0.04,
+        workspace_min=WORKSPACE_MIN,
+        workspace_max=WORKSPACE_MAX,
+    )
 
     print("\nleft stick: xy   L2/R2: z   right stick: pitch/yaw   L1/R1: roll")
     print("square/cross: close/open gripper   triangle: reset   circle: re-anchor\n")

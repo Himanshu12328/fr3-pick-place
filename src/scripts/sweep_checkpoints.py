@@ -40,8 +40,11 @@ def list_checkpoints(run_dir):
     output: list of str, the checkpoint directory names
     """
     ckpt_root = os.path.join(run_dir, "checkpoints")
-    names = [d for d in os.listdir(ckpt_root)
-             if d.isdigit() and os.path.isdir(os.path.join(ckpt_root, d))]
+    names = [
+        d
+        for d in os.listdir(ckpt_root)
+        if d.isdigit() and os.path.isdir(os.path.join(ckpt_root, d))
+    ]
     return sorted(names, key=int)
 
 
@@ -57,8 +60,9 @@ def evaluate_checkpoint(run_dir, name, policy_type, trials, seed):
     policy, pre, post = load_policy_and_processors(ckpt, policy_type)
     adapter = LeRobotPolicyAdapter(policy, pre, post, task=TASK)
 
-    result = evaluate(adapter, n_trials=trials, seed=seed,
-                      need_images=True, verbose=False)
+    result = evaluate(
+        adapter, n_trials=trials, seed=seed, need_images=True, verbose=False
+    )
 
     return {
         "step": int(name),
@@ -146,22 +150,25 @@ def main():
         r.update({"near_rate": near, "far_rate": far})
         records.append(r)
 
-        print(f"  step {r['step']:>7}: {r['success_rate']*100:5.1f}%   "
-              f"near {near*100:5.1f}% (n={n_near})   "
-              f"far {far*100:5.1f}% (n={n_far})")
+        print(
+            f"  step {r['step']:>7}: {r['success_rate'] * 100:5.1f}%   "
+            f"near {near * 100:5.1f}% (n={n_near})   "
+            f"far {far * 100:5.1f}% (n={n_far})"
+        )
 
     best = max(records, key=lambda r: r["success_rate"])
     elapsed = time.perf_counter() - start
 
-    print(f"\nbest: step {best['step']} at {best['success_rate']*100:.1f}%")
-    print(f"elapsed: {elapsed/60:.1f} min")
+    print(f"\nbest: step {best['step']} at {best['success_rate'] * 100:.1f}%")
+    print(f"elapsed: {elapsed / 60:.1f} min")
 
     out = {
         "run": args.run,
         "trials": args.trials,
         "seed": args.seed,
-        "checkpoints": [{k: v for k, v in r.items() if k != "results"}
-                        for r in records],
+        "checkpoints": [
+            {k: v for k, v in r.items() if k != "results"} for r in records
+        ],
     }
     json_path = os.path.join(LOG_DIR, f"sweep_{args.run}.json")
     with open(json_path, "w") as f:

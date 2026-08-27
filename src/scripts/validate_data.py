@@ -42,14 +42,16 @@ def load_episodes(data_dir):
         with open(os.path.join(ep_dir, "meta.json")) as f:
             meta = json.load(f)
 
-        episodes.append({
-            "name": name,
-            "state": npz["state"],
-            "action": npz["action"],
-            "timestamp": npz["timestamp"],
-            "meta": meta,
-            "dir": ep_dir,
-        })
+        episodes.append(
+            {
+                "name": name,
+                "state": npz["state"],
+                "action": npz["action"],
+                "timestamp": npz["timestamp"],
+                "meta": meta,
+                "dir": ep_dir,
+            }
+        )
 
     return episodes
 
@@ -151,8 +153,10 @@ def check_action_smoothness(episodes, fps=30):
     for ep in episodes:
         pos = ep["action"][:, :3]
         deltas = np.linalg.norm(np.diff(pos, axis=0), axis=1)
-        out[ep["name"]] = (float(deltas.max() * 1000),
-                           float(deltas.mean() * 1000 * fps))
+        out[ep["name"]] = (
+            float(deltas.max() * 1000),
+            float(deltas.mean() * 1000 * fps),
+        )
     return out
 
 
@@ -163,8 +167,10 @@ def summarise(episodes, clamped, smoothness):
     input:  episodes (list), clamped (dict), smoothness (dict)
     output: None
     """
-    print(f"\n{'episode':<16}{'frames':>8}{'dur(s)':>8}{'success':>9}"
-          f"{'clamped%':>10}{'maxjump(mm)':>13}{'speed(mm/s)':>13}")
+    print(
+        f"\n{'episode':<16}{'frames':>8}{'dur(s)':>8}{'success':>9}"
+        f"{'clamped%':>10}{'maxjump(mm)':>13}{'speed(mm/s)':>13}"
+    )
 
     for ep in episodes:
         name = ep["name"]
@@ -172,14 +178,16 @@ def summarise(episodes, clamped, smoothness):
         dur = float(ep["timestamp"][-1])
         succ = ep["meta"].get("success", False)
         jump, speed = smoothness[name]
-        print(f"{name:<16}{n:>8}{dur:>8.1f}{str(succ):>9}"
-              f"{clamped[name]*100:>10.1f}{jump:>13.2f}{speed:>13.1f}")
+        print(
+            f"{name:<16}{n:>8}{dur:>8.1f}{str(succ):>9}"
+            f"{clamped[name] * 100:>10.1f}{jump:>13.2f}{speed:>13.1f}"
+        )
 
     lengths = np.array([len(ep["state"]) for ep in episodes])
     successes = sum(ep["meta"].get("success", False) for ep in episodes)
 
     print(f"\nepisodes:        {len(episodes)}")
-    print(f"successful:      {successes} ({successes/len(episodes)*100:.0f}%)")
+    print(f"successful:      {successes} ({successes / len(episodes) * 100:.0f}%)")
     print(f"total frames:    {lengths.sum()}")
     print(f"length mean/std: {lengths.mean():.0f} / {lengths.std():.0f} frames")
     print(f"length min/max:  {lengths.min()} / {lengths.max()} frames")

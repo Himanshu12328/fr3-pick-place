@@ -12,7 +12,6 @@ Run:
 
 import mujoco
 import mujoco.viewer
-import numpy as np
 
 from src.config import FR3_DIR
 
@@ -55,7 +54,9 @@ def describe_model(model):
     for i in range(model.njnt):
         name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_JOINT, i)
         jnt_type = mujoco.mjtJoint(model.jnt_type[i]).name
-        print(f"  [{i}] {name:<28} type={jnt_type}  qposadr={model.jnt_qposadr[i]}  dofadr={model.jnt_dofadr[i]}")
+        print(
+            f"  [{i}] {name:<28} type={jnt_type}  qposadr={model.jnt_qposadr[i]}  dofadr={model.jnt_dofadr[i]}"
+        )
 
     print("\nActuators:")
     for i in range(model.nu):

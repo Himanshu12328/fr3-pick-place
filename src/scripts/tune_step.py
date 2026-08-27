@@ -57,9 +57,15 @@ def setup(kp_trans=300.0, kp_rot=30.0, zeta=1.0):
         mujoco.mj_resetDataKeyframe(model, data, kid)
     mujoco.mj_forward(model, data)
 
-    ctrl = ImpedanceController(model, data,
-                               kp_trans=kp_trans, kp_rot=kp_rot, zeta=zeta,
-                               kp_null=10.0, zeta_null=1.0)
+    ctrl = ImpedanceController(
+        model,
+        data,
+        kp_trans=kp_trans,
+        kp_rot=kp_rot,
+        zeta=zeta,
+        kp_null=10.0,
+        zeta_null=1.0,
+    )
     return model, data, ctrl
 
 
@@ -173,6 +179,7 @@ def step_metrics(t, response, magnitude, settle_band=0.02):
         "steady_state_err_mm": ss_err,
     }
 
+
 def experiment_step_all_axes(kp=300.0, zeta=1.0):
     """
     Runs the step test independently on x, y and z, plots all three, and
@@ -211,10 +218,14 @@ def experiment_step_all_axes(kp=300.0, zeta=1.0):
     plt.close(fig)
 
     print(f"\nStep response  Kp={kp:.0f} N/m  zeta={zeta:.2f}")
-    print(f"{'axis':<6}{'overshoot%':>12}{'rise(ms)':>11}{'settle(s)':>11}{'ss err(mm)':>12}")
+    print(
+        f"{'axis':<6}{'overshoot%':>12}{'rise(ms)':>11}{'settle(s)':>11}{'ss err(mm)':>12}"
+    )
     for name, m in results.items():
-        print(f"{name:<6}{m['overshoot_pct']:>12.2f}{m['rise_time_s']*1000:>11.1f}"
-              f"{m['settle_time_s']:>11.3f}{m['steady_state_err_mm']:>12.3f}")
+        print(
+            f"{name:<6}{m['overshoot_pct']:>12.2f}{m['rise_time_s'] * 1000:>11.1f}"
+            f"{m['settle_time_s']:>11.3f}{m['steady_state_err_mm']:>12.3f}"
+        )
     print(f"saved: {path}")
 
     return results
@@ -260,8 +271,8 @@ def run_sine(model, data, ctrl, axis, freq, amplitude=0.03, cycles=6):
     ref_sin = np.sin(2 * np.pi * freq * tt)
     ref_cos = np.cos(2 * np.pi * freq * tt)
 
-    a = 2.0 * np.mean(rr * ref_sin)   # in-phase component
-    b = 2.0 * np.mean(rr * ref_cos)   # quadrature component
+    a = 2.0 * np.mean(rr * ref_sin)  # in-phase component
+    b = 2.0 * np.mean(rr * ref_cos)  # quadrature component
 
     gain = np.hypot(a, b) / amplitude
     phase_deg = np.degrees(np.arctan2(b, a))
@@ -295,8 +306,9 @@ def experiment_frequency_sweep(kp=300.0, zeta=1.0, axis=0):
     ax1.semilogx(freqs, 20 * np.log10(np.maximum(gains, 1e-6)), "o-")
     ax1.axhline(-3, color="r", ls="--", lw=1, label="-3 dB")
     ax1.set_ylabel("gain (dB)")
-    ax1.set_title(f"Frequency response, {AXIS_NAMES[axis]} axis, "
-                  f"Kp={kp:.0f} N/m, zeta={zeta:.2f}")
+    ax1.set_title(
+        f"Frequency response, {AXIS_NAMES[axis]} axis, Kp={kp:.0f} N/m, zeta={zeta:.2f}"
+    )
     ax1.legend()
     ax1.grid(alpha=0.3, which="both")
 
@@ -317,6 +329,7 @@ def experiment_frequency_sweep(kp=300.0, zeta=1.0, axis=0):
     print(f"saved: {path}")
 
     return freqs, gains, phases
+
 
 def experiment_friction_comparison(kp=300.0, zeta=1.0, axis=2):
     """
@@ -360,13 +373,18 @@ def experiment_friction_comparison(kp=300.0, zeta=1.0, axis=2):
     plt.close(fig)
 
     print(f"\nFriction comparison, {AXIS_NAMES[axis]} axis, Kp={kp:.0f} N/m")
-    print(f"{'condition':<16}{'overshoot%':>12}{'rise(ms)':>11}{'settle(s)':>11}{'ss err(mm)':>12}")
+    print(
+        f"{'condition':<16}{'overshoot%':>12}{'rise(ms)':>11}{'settle(s)':>11}{'ss err(mm)':>12}"
+    )
     for label, m in results.items():
-        print(f"{label:<16}{m['overshoot_pct']:>12.2f}{m['rise_time_s']*1000:>11.1f}"
-              f"{m['settle_time_s']:>11.3f}{m['steady_state_err_mm']:>12.3f}")
+        print(
+            f"{label:<16}{m['overshoot_pct']:>12.2f}{m['rise_time_s'] * 1000:>11.1f}"
+            f"{m['settle_time_s']:>11.3f}{m['steady_state_err_mm']:>12.3f}"
+        )
     print(f"saved: {path}")
 
     return results
+
 
 def experiment_stiffness_sweep(kp_values=(50, 150, 300, 800, 2000), zeta=1.0):
     """
@@ -401,13 +419,18 @@ def experiment_stiffness_sweep(kp_values=(50, 150, 300, 800, 2000), zeta=1.0):
     plt.close(fig)
 
     print(f"\nStiffness sweep, z axis, zeta={zeta:.2f}")
-    print(f"{'Kp':>6}{'overshoot%':>12}{'rise(ms)':>11}{'settle(s)':>11}{'ss err(mm)':>12}")
+    print(
+        f"{'Kp':>6}{'overshoot%':>12}{'rise(ms)':>11}{'settle(s)':>11}{'ss err(mm)':>12}"
+    )
     for kp, m in results.items():
-        print(f"{kp:>6}{m['overshoot_pct']:>12.2f}{m['rise_time_s']*1000:>11.1f}"
-              f"{m['settle_time_s']:>11.3f}{m['steady_state_err_mm']:>12.3f}")
+        print(
+            f"{kp:>6}{m['overshoot_pct']:>12.2f}{m['rise_time_s'] * 1000:>11.1f}"
+            f"{m['settle_time_s']:>11.3f}{m['steady_state_err_mm']:>12.3f}"
+        )
     print(f"saved: {path}")
 
     return results
+
 
 def experiment_zeta_sweep(kp=800.0, zeta_values=(0.5, 0.7, 1.0, 1.4), axis=2):
     """
@@ -456,12 +479,16 @@ def experiment_zeta_sweep(kp=800.0, zeta_values=(0.5, 0.7, 1.0, 1.4), axis=2):
     plt.close(fig)
 
     print(f"\nDamping sweep, {AXIS_NAMES[axis]} axis, Kp={kp:.0f} N/m")
-    print(f"{'zeta':>6}{'overshoot%':>12}{'rise(ms)':>11}{'settle(s)':>11}"
-          f"{'ss err(mm)':>12}{'BW(Hz)':>9}")
+    print(
+        f"{'zeta':>6}{'overshoot%':>12}{'rise(ms)':>11}{'settle(s)':>11}"
+        f"{'ss err(mm)':>12}{'BW(Hz)':>9}"
+    )
     for z, m in results.items():
-        print(f"{z:>6.2f}{m['overshoot_pct']:>12.2f}{m['rise_time_s']*1000:>11.1f}"
-              f"{m['settle_time_s']:>11.3f}{m['steady_state_err_mm']:>12.3f}"
-              f"{m['bandwidth_hz']:>9.2f}")
+        print(
+            f"{z:>6.2f}{m['overshoot_pct']:>12.2f}{m['rise_time_s'] * 1000:>11.1f}"
+            f"{m['settle_time_s']:>11.3f}{m['steady_state_err_mm']:>12.3f}"
+            f"{m['bandwidth_hz']:>9.2f}"
+        )
     print(f"saved: {path}")
 
     return results

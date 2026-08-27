@@ -29,9 +29,11 @@ def report_passive_params(model):
     """
     print(f"{'dof':<5}{'damping':>12}{'frictionloss':>15}{'armature':>12}")
     for i in range(model.nv):
-        print(f"{i:<5}{model.dof_damping[i]:>12.4f}"
-              f"{model.dof_frictionloss[i]:>15.4f}"
-              f"{model.dof_armature[i]:>12.4f}")
+        print(
+            f"{i:<5}{model.dof_damping[i]:>12.4f}"
+            f"{model.dof_frictionloss[i]:>15.4f}"
+            f"{model.dof_armature[i]:>12.4f}"
+        )
 
     print(f"\ntotal frictionloss: {np.sum(model.dof_frictionloss):.3f}")
     print(f"total damping:      {np.sum(model.dof_damping):.3f}")

@@ -101,8 +101,9 @@ def filmstrip(data_dir, ep_name, cameras, out_path):
 
     frames = key_frame_indices(action)
 
-    fig, axes = plt.subplots(len(cameras), len(frames),
-                             figsize=(2.6 * len(frames), 2.2 * len(cameras)))
+    fig, axes = plt.subplots(
+        len(cameras), len(frames), figsize=(2.6 * len(frames), 2.2 * len(cameras))
+    )
     if len(cameras) == 1:
         axes = axes[None, :]
 
@@ -116,12 +117,22 @@ def filmstrip(data_dir, ep_name, cameras, out_path):
             if r == 0:
                 ax.set_title(f"{label}\n{idx}", fontsize=8)
             if c == 0:
-                ax.text(-0.08, 0.5, cam, rotation=90, va="center", ha="right",
-                        transform=ax.transAxes, fontsize=9)
+                ax.text(
+                    -0.08,
+                    0.5,
+                    cam,
+                    rotation=90,
+                    va="center",
+                    ha="right",
+                    transform=ax.transAxes,
+                    fontsize=9,
+                )
 
-    fig.suptitle(f"{ep_name}   {meta['n_frames']} frames   "
-                 f"{meta['duration_s']:.1f}s   success={meta['success']}",
-                 fontsize=11)
+    fig.suptitle(
+        f"{ep_name}   {meta['n_frames']} frames   "
+        f"{meta['duration_s']:.1f}s   success={meta['success']}",
+        fontsize=11,
+    )
 
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     fig.savefig(out_path, dpi=100, bbox_inches="tight")
@@ -154,8 +165,11 @@ def brightness_audit(data_dir, ep_names, camera="external"):
     mu, sd = valid.mean(), valid.std()
     print(f"\n{camera} frame-0 brightness: mean {mu:.1f}, std {sd:.2f}")
 
-    outliers = [(n, m) for n, m in zip(ep_names, arr)
-                if not np.isnan(m) and abs(m - mu) > 3 * sd]
+    outliers = [
+        (n, m)
+        for n, m in zip(ep_names, arr, strict=True)
+        if not np.isnan(m) and abs(m - mu) > 3 * sd
+    ]
     if outliers:
         print("  outliers (>3 sd):")
         for n, m in outliers:
@@ -190,8 +204,9 @@ def main():
         chosen = [rng.choice(names)]
 
     for name in chosen:
-        filmstrip(DATA_DIR, name, cameras,
-                  os.path.join(LOG_DIR, f"filmstrip_{name}.png"))
+        filmstrip(
+            DATA_DIR, name, cameras, os.path.join(LOG_DIR, f"filmstrip_{name}.png")
+        )
 
     brightness_audit(DATA_DIR, names)
 

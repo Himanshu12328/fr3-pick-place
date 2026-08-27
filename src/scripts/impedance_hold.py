@@ -30,7 +30,7 @@ from src.controllers.impedance import ImpedanceController
 MODEL_PATH = str(SCENE_PATH)
 
 N_ARM = 7
-NUDGE = 0.05   # metres per keypress
+NUDGE = 0.05  # metres per keypress
 
 
 def setup_model(path, timestep=0.001):
@@ -94,9 +94,12 @@ def make_key_callback(ctrl, data, state):
     output: function taking an int keycode
     """
     moves = {
-        "W": (0, +NUDGE), "S": (0, -NUDGE),
-        "A": (1, +NUDGE), "D": (1, -NUDGE),
-        "Q": (2, +NUDGE), "E": (2, -NUDGE),
+        "W": (0, +NUDGE),
+        "S": (0, -NUDGE),
+        "A": (1, +NUDGE),
+        "D": (1, -NUDGE),
+        "Q": (2, +NUDGE),
+        "E": (2, -NUDGE),
     }
 
     def callback(keycode):
@@ -172,8 +175,7 @@ def run(model, data, ctrl, key_callback):
     last_report = time.perf_counter()
     sim_start = time.perf_counter()
 
-    with mujoco.viewer.launch_passive(model, data,
-                                      key_callback=key_callback) as viewer:
+    with mujoco.viewer.launch_passive(model, data, key_callback=key_callback) as viewer:
         while viewer.is_running():
             data.qfrc_applied[:N_ARM] = ctrl.compute_torque(data)
             mujoco.mj_step(model, data)
@@ -204,10 +206,16 @@ def main():
     model, data = setup_model(MODEL_PATH)
     reset_to_keyframe(model, data, "home")
 
-    ctrl = ImpedanceController(model, data,
-                               kp_trans=300.0, kp_rot=30.0, zeta=1.0,
-                               kp_null=10.0, zeta_null=1.0,
-                               n_arm=N_ARM)
+    ctrl = ImpedanceController(
+        model,
+        data,
+        kp_trans=300.0,
+        kp_rot=30.0,
+        zeta=1.0,
+        kp_null=10.0,
+        zeta_null=1.0,
+        n_arm=N_ARM,
+    )
 
     state = {"nullspace": True}
     run(model, data, ctrl, make_key_callback(ctrl, data, state))

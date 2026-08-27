@@ -36,11 +36,11 @@ AX_L2, AX_R2 = 4, 5
 # from the commonly documented SDL DualSense mapping, so do not substitute
 # values from a reference table without re-checking on the actual hardware.
 BTN_CROSS, BTN_CIRCLE, BTN_SQUARE, BTN_TRIANGLE = 0, 1, 2, 3
-BTN_SHARE = 4              # small button left of the touchpad
-BTN_PS = 5                 # centre PlayStation button; avoid binding, some
-                           # systems intercept it and open a system overlay
-BTN_OPTIONS = 6            # small button right of the touchpad
-BTN_L3, BTN_R3 = 7, 8      # stick clicks
+BTN_SHARE = 4  # small button left of the touchpad
+BTN_PS = 5  # centre PlayStation button; avoid binding, some
+# systems intercept it and open a system overlay
+BTN_OPTIONS = 6  # small button right of the touchpad
+BTN_L3, BTN_R3 = 7, 8  # stick clicks
 BTN_L1, BTN_R1 = 9, 10
 BTN_DPAD_UP, BTN_DPAD_DOWN = 11, 12
 BTN_DPAD_LEFT, BTN_DPAD_RIGHT = 13, 14
@@ -50,18 +50,18 @@ BTN_TOUCHPAD = 15
 # and is unambiguous by feel, which matters for a control pressed several
 # hundred times in a collection session. Share and Options are recessed and
 # easy to miss mid-demonstration.
-BTN_START_EP = BTN_DPAD_UP        # 11
-BTN_SAVE_EP = BTN_DPAD_RIGHT      # 14
-BTN_DISCARD_EP = BTN_DPAD_DOWN    # 12
+BTN_START_EP = BTN_DPAD_UP  # 11
+BTN_SAVE_EP = BTN_DPAD_RIGHT  # 14
+BTN_DISCARD_EP = BTN_DPAD_DOWN  # 12
 
 # --------------------------------------------------------------- tuning ---
 
-DEADZONE = 0.08          # sticks rest within +/-0.02; 0.08 covers drift
-LINEAR_SPEED = 0.15      # m/s at full stick deflection
-ANGULAR_SPEED = 0.8      # rad/s at full deflection
+DEADZONE = 0.08  # sticks rest within +/-0.02; 0.08 covers drift
+LINEAR_SPEED = 0.15  # m/s at full stick deflection
+ANGULAR_SPEED = 0.8  # rad/s at full deflection
 # GRIPPER_SPEED = 0.08     # m/s of finger travel
-GRIPPER_OPEN = 0.04      # metres per finger, fully open
-GRIPPER_CLOSED = 0.0     # commanded closed; the PD force clamp does the rest
+GRIPPER_OPEN = 0.04  # metres per finger, fully open
+GRIPPER_CLOSED = 0.0  # commanded closed; the PD force clamp does the rest
 
 # Operator viewpoint. Standing in front of the arm looking back at it means
 # the robot's +x points toward you and +y is mirrored, so stick directions
@@ -114,8 +114,14 @@ class DualSenseTeleop:
     the two identical.
     """
 
-    def __init__(self, x_init, quat_init, gripper_init=0.04,
-                 workspace_min=None, workspace_max=None):
+    def __init__(
+        self,
+        x_init,
+        quat_init,
+        gripper_init=0.04,
+        workspace_min=None,
+        workspace_max=None,
+    ):
         """
         Opens the first connected pad and seeds the target at the arm's
         current pose.
@@ -138,8 +144,10 @@ class DualSenseTeleop:
 
         self.pad = pygame.joystick.Joystick(0)
         self.pad.init()
-        print(f"Teleop pad: {self.pad.get_name()}  "
-              f"axes={self.pad.get_numaxes()}  buttons={self.pad.get_numbuttons()}")
+        print(
+            f"Teleop pad: {self.pad.get_name()}  "
+            f"axes={self.pad.get_numaxes()}  buttons={self.pad.get_numbuttons()}"
+        )
 
         self.x_des = np.asarray(x_init, dtype=np.float64).copy()
         self.quat_des = np.asarray(quat_init, dtype=np.float64).copy()
@@ -176,13 +184,15 @@ class DualSenseTeleop:
 
         vx = apply_deadzone(-ax[AX_LEFT_Y]) * LINEAR_SPEED * OPERATOR_SIGN_X
         vy = apply_deadzone(-ax[AX_LEFT_X]) * LINEAR_SPEED * OPERATOR_SIGN_Y
-        vz = (normalise_trigger(ax[AX_R2])
-              - normalise_trigger(ax[AX_L2])) * LINEAR_SPEED
+        vz = (
+            normalise_trigger(ax[AX_R2]) - normalise_trigger(ax[AX_L2])
+        ) * LINEAR_SPEED
 
-        wy = apply_deadzone(-ax[AX_RIGHT_Y]) * ANGULAR_SPEED   # pitch
-        wz = apply_deadzone(-ax[AX_RIGHT_X]) * ANGULAR_SPEED   # yaw
-        wx = (self.pad.get_button(BTN_R1)
-              - self.pad.get_button(BTN_L1)) * ANGULAR_SPEED   # roll
+        wy = apply_deadzone(-ax[AX_RIGHT_Y]) * ANGULAR_SPEED  # pitch
+        wz = apply_deadzone(-ax[AX_RIGHT_X]) * ANGULAR_SPEED  # yaw
+        wx = (
+            self.pad.get_button(BTN_R1) - self.pad.get_button(BTN_L1)
+        ) * ANGULAR_SPEED  # roll
 
         # Binary gripper. Two states rather than an integrated width: a
         # rigid cube has no use for intermediate openings, and a continuous
@@ -225,14 +235,15 @@ class DualSenseTeleop:
 
             w0, x0, y0, z0 = dq
             w1, x1, y1, z1 = self.quat_des
-            self.quat_des = np.array([
-                w0 * w1 - x0 * x1 - y0 * y1 - z0 * z1,
-                w0 * x1 + x0 * w1 + y0 * z1 - z0 * y1,
-                w0 * y1 - x0 * z1 + y0 * w1 + z0 * x1,
-                w0 * z1 + x0 * y1 - y0 * x1 + z0 * w1,
-            ])
+            self.quat_des = np.array(
+                [
+                    w0 * w1 - x0 * x1 - y0 * y1 - z0 * z1,
+                    w0 * x1 + x0 * w1 + y0 * z1 - z0 * y1,
+                    w0 * y1 - x0 * z1 + y0 * w1 + z0 * x1,
+                    w0 * z1 + x0 * y1 - y0 * x1 + z0 * w1,
+                ]
+            )
             self.quat_des /= np.linalg.norm(self.quat_des)
-
 
         return self.x_des, self.quat_des, self.gripper
 

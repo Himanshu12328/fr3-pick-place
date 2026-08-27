@@ -29,7 +29,9 @@ def open_pad():
 
     pad = pygame.joystick.Joystick(0)
     pad.init()
-    print(f"{pad.get_name()}  axes={pad.get_numaxes()}  buttons={pad.get_numbuttons()}\n")
+    print(
+        f"{pad.get_name()}  axes={pad.get_numaxes()}  buttons={pad.get_numbuttons()}\n"
+    )
     return pad
 
 
