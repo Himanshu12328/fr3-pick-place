@@ -14,7 +14,9 @@ import mujoco
 import mujoco.viewer
 import numpy as np
 
-MODEL_PATH = r"C:\pick_place\mujoco_menagerie\franka_fr3\scene.xml"
+from src.config import FR3_DIR
+
+MODEL_PATH = str(FR3_DIR / "scene.xml")
 
 
 def load_model(path):

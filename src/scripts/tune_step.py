@@ -1,6 +1,4 @@
 """
-tune_step.py
-
 Quantitative characterisation of the Cartesian impedance controller.
 
 Runs three headless experiments and writes plots to logs/:
@@ -20,17 +18,16 @@ Run:
 """
 
 import os
-import sys
 
 import matplotlib.pyplot as plt
 import mujoco
 import numpy as np
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
+from src.config import LOG_DIR, MODEL_PATH
 from src.controllers.impedance import ImpedanceController
 
-MODEL_PATH = r"C:\pick_place\mujoco_menagerie\franka_fr3\scene.xml"
-LOG_DIR = r"C:\pick_place\logs"
+MODEL_PATH = MODEL_PATH
+LOG_DIR = LOG_DIR
 
 AXIS_NAMES = ["x", "y", "z"]
 

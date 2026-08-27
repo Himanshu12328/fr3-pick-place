@@ -16,19 +16,17 @@ Run:
     python src\\scripts\\teleop_test.py
 """
 
-import os
-import sys
 import time
 
 import mujoco
 import mujoco.viewer
 import numpy as np
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
+from src.config import SCENE_PATH
 from src.controllers.impedance import ImpedanceController
 from src.teleop.dualsense import BTN_CIRCLE, BTN_TRIANGLE, DualSenseTeleop
 
-MODEL_PATH = r"C:\pick_place\models\fr3_pick_place.xml"
+MODEL_PATH = str(SCENE_PATH)
 
 N_ARM = 7
 FINGER_DOFS = [7, 8]
@@ -40,7 +38,7 @@ KP_TRANS, KP_ROT, ZETA = 800.0, 60.0, 0.7
 # Finger joints are driven by a simple PD, not by the impedance controller.
 GRIP_KP, GRIP_KD = 300.0, 15.0
 
-WORKSPACE_MIN = np.array([0.25, -0.35, 0.44])
+WORKSPACE_MIN = np.array([0.25, -0.35, 0.405])
 WORKSPACE_MAX = np.array([0.85, 0.35, 0.85])
 
 
@@ -133,8 +131,8 @@ def run(model, data, ctrl, pad):
 
     with mujoco.viewer.launch_passive(model, data) as viewer:
         while viewer.is_running():
-            twist, grip_vel = pad.read_twist()
-            x_des, quat_des, grip = pad.integrate(twist, grip_vel, dt)
+            twist = pad.read_twist()
+            x_des, quat_des, grip = pad.integrate(twist, dt)
 
             if pad.button_pressed(BTN_TRIANGLE):
                 reset_scene(model, data)

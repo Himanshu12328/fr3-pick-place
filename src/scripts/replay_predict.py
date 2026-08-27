@@ -20,18 +20,17 @@ Run:
 
 import argparse
 import os
-import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
+from src.config import LOG_DIR, OUTPUT_ROOT, SMALL_DATA_DIR
 from src.eval.policy_wrapper import LeRobotPolicyAdapter, load_policy_and_processors
 
-OUTPUT_ROOT = r"C:\pick_place\outputs"
-RAW_DIR = r"C:\pick_place\data\pick_place_v1_small"
-LOG_DIR = r"C:\pick_place\logs"
+OUTPUT_ROOT = OUTPUT_ROOT
+RAW_DIR = SMALL_DATA_DIR
+LOG_DIR = LOG_DIR
 
 CAMERAS = ["external", "wrist_left", "wrist_right"]
 TASK = "pick up the red block and place it on the green target"

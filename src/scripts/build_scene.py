@@ -17,8 +17,10 @@ import xml.etree.ElementTree as ET
 import mujoco
 import numpy as np
 
-MENAGERIE_FR3 = r"C:\pick_place\mujoco_menagerie\franka_fr3"
-OUT_PATH = r"C:\pick_place\models\fr3_pick_place.xml"
+from src.config import FR3_DIR, SCENE_PATH
+
+MENAGERIE_FR3 = FR3_DIR
+OUT_PATH = str(SCENE_PATH)
 
 # Scene geometry, all in metres. Edit these to move things around.
 TABLE_CENTER = (0.55, 0.0, 0.20)   # centre of the table box
@@ -253,8 +255,6 @@ def build():
     option.set("timestep", "0.001")
     option.set("integrator", "implicitfast")
     option.set("cone", "elliptic")
-    option.set("noslip_iterations", "3")
-
     option.set("noslip_iterations", "3")
 
     # Brighter ambient light. Camera renders are much dimmer than the

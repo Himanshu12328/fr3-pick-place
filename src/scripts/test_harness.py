@@ -18,12 +18,11 @@ Run:
 
 import json
 import os
-import sys
 
 import mujoco
 import numpy as np
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
+from src.config import RAW_DATA_DIR
 from src.controllers.impedance import ImpedanceController
 from src.data.task import check_success, set_block_pose
 from src.eval.rollout import (
@@ -38,11 +37,10 @@ from src.eval.rollout import (
     WORKSPACE_MIN,
     ZETA,
     gripper_torque,
-    run_trial,
     setup_model,
 )
 
-RAW_DIR = r"C:\pick_place\data\pick_place_v1"
+RAW_DIR = RAW_DATA_DIR
 
 
 class ReplayPolicy:

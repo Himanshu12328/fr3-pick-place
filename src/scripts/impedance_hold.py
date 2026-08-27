@@ -18,18 +18,16 @@ Run:
     python src\\scripts\\impedance_hold.py
 """
 
-import os
-import sys
 import time
 
 import mujoco
 import mujoco.viewer
 import numpy as np
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
+from src.config import SCENE_PATH
 from src.controllers.impedance import ImpedanceController
 
-MODEL_PATH = r"C:\pick_place\models\fr3_pick_place.xml"
+MODEL_PATH = str(SCENE_PATH)
 
 N_ARM = 7
 NUDGE = 0.05   # metres per keypress

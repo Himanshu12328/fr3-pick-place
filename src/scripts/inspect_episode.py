@@ -17,14 +17,15 @@ Run:
 import argparse
 import json
 import os
-import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
 
-DATA_DIR = r"C:\pick_place\data\pick_place_v1"
-LOG_DIR = r"C:\pick_place\logs"
+from src.config import LOG_DIR, RAW_DATA_DIR
+
+DATA_DIR = RAW_DATA_DIR
+LOG_DIR = LOG_DIR
 
 
 def list_episodes(data_dir):

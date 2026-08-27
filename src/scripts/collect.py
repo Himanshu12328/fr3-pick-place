@@ -22,15 +22,13 @@ Run:
     python src\\scripts\\collect.py
 """
 
-import os
-import sys
 import time
 
 import mujoco
 import mujoco.viewer
 import numpy as np
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
+from src.config import RAW_DATA_DIR, SCENE_PATH
 from src.controllers.impedance import ImpedanceController
 from src.data.recorder import EpisodeRecorder, next_episode_index
 from src.data.task import check_success, sample_block_pose, set_block_pose
@@ -42,8 +40,8 @@ from src.teleop.dualsense import (
     DualSenseTeleop,
 )
 
-MODEL_PATH = r"C:\pick_place\models\fr3_pick_place.xml"
-DATA_DIR = r"C:\pick_place\data\pick_place_v1"
+MODEL_PATH = str(SCENE_PATH)
+DATA_DIR = RAW_DATA_DIR
 
 N_ARM = 7
 FINGER_DOFS = [7, 8]

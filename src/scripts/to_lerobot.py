@@ -19,16 +19,15 @@ Run:
 import json
 import os
 import shutil
-import sys
 
 import numpy as np
 from lerobot.datasets.lerobot_dataset import LeRobotDataset
 from PIL import Image
 
-# RAW_DIR = r"C:\pick_place\data\pick_place_v1"
-# REPO_ID = "local/fr3_pick_place"
-OUT_ROOT = r"C:\pick_place\data\lerobot"
-RAW_DIR = r"C:\pick_place\data\pick_place_v1_small"
+from src.config import LEROBOT_DIR, SMALL_DATA_DIR
+
+OUT_ROOT = LEROBOT_DIR
+RAW_DIR = SMALL_DATA_DIR
 REPO_ID = "local/fr3_pick_place_small"
 
 # PNG frames rather than encoded video. Video is smaller and loads faster,

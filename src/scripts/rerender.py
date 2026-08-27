@@ -21,20 +21,19 @@ Run:
 import json
 import os
 import shutil
-import sys
 import time
 
 import mujoco
 import numpy as np
 from PIL import Image
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
+from src.config import RAW_DATA_DIR, SCENE_PATH, SMALL_DATA_DIR
 from src.controllers.impedance import ImpedanceController
 from src.data.task import set_block_pose
 
-MODEL_PATH = r"C:\pick_place\models\fr3_pick_place.xml"
-SRC_DIR = r"C:\pick_place\data\pick_place_v1"
-DST_DIR = r"C:\pick_place\data\pick_place_v1_small"
+MODEL_PATH = str(SCENE_PATH)
+SRC_DIR = RAW_DATA_DIR
+DST_DIR = SMALL_DATA_DIR
 
 CAM_WIDTH, CAM_HEIGHT = 160, 128
 

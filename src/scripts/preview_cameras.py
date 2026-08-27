@@ -15,10 +15,11 @@ import os
 
 import matplotlib.pyplot as plt
 import mujoco
-import numpy as np
 
-MODEL_PATH = r"C:\pick_place\models\fr3_pick_place.xml"
-OUT_PATH = r"C:\pick_place\logs\camera_preview.png"
+from src.config import LOG_DIR, SCENE_PATH
+
+MODEL_PATH = str(SCENE_PATH)
+OUT_PATH = str(LOG_DIR / "camera_preview.png")
 
 WIDTH, HEIGHT = 640, 480
 

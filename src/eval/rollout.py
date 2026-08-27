@@ -20,17 +20,16 @@ validated independently of any model.
 """
 
 import os
-import sys
 import time
 
 import mujoco
 import numpy as np
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
+from src.config import SCENE_PATH
 from src.controllers.impedance import ImpedanceController
 from src.data.task import check_success, sample_block_pose, set_block_pose
 
-MODEL_PATH = r"C:\pick_place\models\fr3_pick_place.xml"
+MODEL_PATH = str(SCENE_PATH)
 
 N_ARM = 7
 FINGER_DOFS = [7, 8]

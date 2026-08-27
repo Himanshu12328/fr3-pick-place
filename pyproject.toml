@@ -1,0 +1,51 @@
+[project]
+name = "fr3-pick-place"
+version = "0.1.0"
+description = "Cartesian impedance control, teleoperated demonstration collection, and imitation learning for a 7-DOF Franka FR3 in MuJoCo"
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+license = { text = "MIT" }
+
+# torch is deliberately absent. Blackwell GPUs need the cu128 wheel index,
+# which cannot be expressed here, so it is installed separately before
+# anything else. See README setup step 3.
+dependencies = [
+    "mujoco>=3.11",
+    "numpy>=2.0,<2.3",
+    "scipy",
+    "matplotlib",
+    "pillow",
+    "pygame",
+]
+
+[project.optional-dependencies]
+train = ["lerobot==0.4.4"]
+dev = ["ruff", "pytest"]
+
+[project.scripts]
+fr3-build-scene = "src.scripts.build_scene:main"
+fr3-collect = "src.scripts.collect:main"
+fr3-validate = "src.scripts.validate_data:main"
+fr3-rerender = "src.scripts.rerender:main"
+fr3-to-lerobot = "src.scripts.to_lerobot:main"
+fr3-eval = "src.scripts.eval_policy:main"
+fr3-sweep = "src.scripts.sweep_checkpoints:main"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

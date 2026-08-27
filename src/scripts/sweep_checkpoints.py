@@ -15,18 +15,17 @@ Run:
 import argparse
 import json
 import os
-import sys
 import time
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
+from src.config import LOG_DIR, OUTPUT_ROOT
 from src.eval.policy_wrapper import LeRobotPolicyAdapter, load_policy_and_processors
 from src.eval.rollout import evaluate
 
-OUTPUT_ROOT = r"C:\pick_place\outputs"
-LOG_DIR = r"C:\pick_place\logs"
+OUTPUT_ROOT = OUTPUT_ROOT
+LOG_DIR = LOG_DIR
 TASK = "pick up the red block and place it on the green target"
 
 
