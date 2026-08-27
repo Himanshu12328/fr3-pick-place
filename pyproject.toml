@@ -20,7 +20,7 @@ dependencies = [
 
 [project.optional-dependencies]
 train = ["lerobot==0.4.4"]
-dev = ["ruff", "pytest"]
+dev = ["ruff==0.16.4", "pytest"]
 
 [project.scripts]
 fr3-build-scene = "src.scripts.build_scene:main"
