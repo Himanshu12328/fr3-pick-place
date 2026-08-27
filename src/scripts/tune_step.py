@@ -23,10 +23,10 @@ import matplotlib.pyplot as plt
 import mujoco
 import numpy as np
 
-from src.config import LOG_DIR, MODEL_PATH
+from src.config import LOG_DIR, SCENE_PATH
 from src.controllers.impedance import ImpedanceController
 
-MODEL_PATH = MODEL_PATH
+MODEL_PATH = str(SCENE_PATH)
 LOG_DIR = LOG_DIR
 
 AXIS_NAMES = ["x", "y", "z"]
