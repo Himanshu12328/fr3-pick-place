@@ -79,6 +79,9 @@ def summarise_by_region(results, split_x=0.53):
     works well in the well-represented region and fails elsewhere, and an
     aggregate success rate hides that entirely. Splitting makes it visible.
 
+    The finer breakdown, including the y axis, lives in region_analysis.py.
+    This script only needs enough detail to rank checkpoints.
+
     input:  results (list of trial dicts), split_x (float) metres
     output: (near_rate, far_rate, near_n, far_n)
     """
