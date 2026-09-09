@@ -22,6 +22,7 @@ Run:
     python src\\scripts\\collect.py
 """
 
+import argparse
 import time
 
 import mujoco
@@ -86,7 +87,7 @@ def setup_model(path):
     return model, mujoco.MjData(model)
 
 
-def reset_episode(model, data, rng, ctrl, pad):
+def reset_episode(model, data, rng, ctrl, pad, bias_near=False):
     """
     Resets the arm to home, places the block at a fresh random pose, and
     reseeds the teleop target so the arm does not lurch.
@@ -101,7 +102,7 @@ def reset_episode(model, data, rng, ctrl, pad):
     else:
         mujoco.mj_resetData(model, data)
 
-    block_pos, block_quat = sample_block_pose(rng)
+    block_pos, block_quat = sample_block_pose(rng, bias_near=bias_near)
     set_block_pose(model, data, block_pos, block_quat, BLOCK_QPOS_ADR, BLOCK_QVEL_ADR)
     mujoco.mj_forward(model, data)
 
@@ -199,7 +200,7 @@ def draw_overlay(viewer, target_pos, recording):
     viewer.user_scn.ngeom = 1
 
 
-def run(model, data, ctrl, pad, recorder, rng):
+def run(model, data, ctrl, pad, recorder, rng, bias_near=False):
     """
     Main collection loop.
 
@@ -211,7 +212,10 @@ def run(model, data, ctrl, pad, recorder, rng):
 
     input:  model (MjModel), data (MjData), ctrl (ImpedanceController),
             pad (DualSenseTeleop), recorder (EpisodeRecorder),
-            rng (numpy Generator)
+            rng (numpy Generator),
+            bias_near (bool) restrict block placements to the near half of
+            the x range, where evaluation shows both policies are 14 to 21
+            points weaker
     output: None, blocks until the viewer closes
     """
     dt = model.opt.timestep
@@ -220,7 +224,7 @@ def run(model, data, ctrl, pad, recorder, rng):
     ep_index = next_episode_index(recorder.out_dir)
     print(f"Next episode index: {ep_index}")
 
-    block_pos, block_quat = reset_episode(model, data, rng, ctrl, pad)
+    block_pos, block_quat = reset_episode(model, data, rng, ctrl, pad, bias_near)
 
     step_count = 0
     ep_start_time = 0.0
@@ -252,19 +256,20 @@ def run(model, data, ctrl, pad, recorder, rng):
                         "block_start_pos": block_pos.tolist(),
                         "block_start_quat": block_quat.tolist(),
                         "final_distance_m": dist,
+                        "bias_near": bias_near,
                     },
                 )
                 saved += 1
                 successes += int(success)
                 ep_index += 1
                 print(f"  session: {saved} saved, {successes} successful")
-                block_pos, block_quat = reset_episode(model, data, rng, ctrl, pad)
+                block_pos, block_quat = reset_episode(model, data, rng, ctrl, pad, bias_near=bias_near)
 
             if pad.button_pressed(BTN_DISCARD_EP):
                 if recorder.recording:
                     n = recorder.discard()
                     print(f"\n  discarded {n} frames")
-                block_pos, block_quat = reset_episode(model, data, rng, ctrl, pad)
+                block_pos, block_quat = reset_episode(model, data, rng, ctrl, pad, bias_near=bias_near)
 
             if pad.button_pressed(BTN_CIRCLE):
                 pos, quat = ctrl.current_pose(data)
@@ -329,6 +334,15 @@ def main():
     input:  none
     output: None
     """
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--bias-near",
+        action="store_true",
+        help="sample block placements only in the near half of the x range, "
+        "where the policy is weakest",
+    )
+    args = parser.parse_args()
+
     model, data = setup_model(MODEL_PATH)
 
     ctrl = ImpedanceController(
@@ -361,13 +375,15 @@ def main():
     rng = np.random.default_rng()
 
     print("\nD-pad UP start   RIGHT save   DOWN discard   circle re-anchor")
-    print("Red marker means recording.\n")
+    print("Red marker means recording.")
+    if args.bias_near:
+        print("Sampling biased to the near region, x < 0.53.")
+    print()
 
     try:
-        run(model, data, ctrl, pad, recorder, rng)
+        run(model, data, ctrl, pad, recorder, rng, bias_near=args.bias_near)
     finally:
         pad.close()
-
 
 if __name__ == "__main__":
     main()
