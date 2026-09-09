@@ -17,7 +17,7 @@ Batching or moving to the device here would double-apply those steps.
 
 import numpy as np
 import torch
-from lerobot.policies.act.modeling_act import ACTPolicy
+from lerobot.policies.act.modeling_act import ACTPolicy, ACTTemporalEnsembler
 from lerobot.policies.diffusion.modeling_diffusion import DiffusionPolicy
 from lerobot.policies.factory import make_pre_post_processors
 
@@ -27,8 +27,53 @@ POLICY_CLASSES = {
 }
 
 
+def enable_temporal_ensembling(policy, policy_type, coeff):
+    """
+    Switches a loaded ACT policy over to temporal ensembling.
+
+    ACT normally predicts a chunk of actions and executes all of them
+    before predicting again, so the last action in a chunk was planned from
+    an observation many steps stale. Temporal ensembling instead predicts a
+    fresh chunk every step and executes an exponentially weighted average
+    of every prediction that overlaps the current timestep. Averaging over
+    many independent predictions is what damps the drift that accumulates
+    while a chunk plays out open loop.
+
+    Setting the config field alone is not enough. ACTPolicy builds its
+    ensembler in __init__ and only when the coefficient is already set, so
+    a checkpoint loaded without one has no ensembler at all. Assigning the
+    config field on such a policy sends select_action down the ensembling
+    branch and straight into an AttributeError. The ensembler has to be
+    attached here as well.
+
+    n_action_steps is forced to 1 because the ensemble needs a prediction
+    at every timestep. LeRobot rejects any other value in its own config
+    validation for the same reason.
+
+    input:  policy (LeRobot policy), policy_type (str), coeff (float)
+    output: None, mutates policy
+    """
+    if policy_type != "act":
+        raise ValueError(
+            f"Temporal ensembling is an ACT feature, got policy type {policy_type!r}."
+        )
+
+    policy.config.temporal_ensemble_coeff = coeff
+    policy.config.n_action_steps = 1
+    policy.temporal_ensembler = ACTTemporalEnsembler(coeff, policy.config.chunk_size)
+
+    print(
+        f"  temporal ensembling on, coeff {coeff}, "
+        f"chunk {policy.config.chunk_size}, n_action_steps forced to 1"
+    )
+
+
 def load_policy_and_processors(
-    checkpoint_dir, policy_type="diffusion", device="cuda", n_action_steps=None
+    checkpoint_dir,
+    policy_type="diffusion",
+    device="cuda",
+    n_action_steps=None,
+    temporal_ensemble_coeff=None,
 ):
     """
     Loads the policy weights and both processor pipelines from a
@@ -44,10 +89,15 @@ def load_policy_and_processors(
     re-plan more often, which limits how far the arm can drift on
     a stale plan.
 
+    temporal_ensemble_coeff (float or None) turn on ACT temporal
+    ensembling at inference. Both of these are inference-time settings, so
+    they apply to any checkpoint already on disk with no retraining.
+
     input:  checkpoint_dir (str) path to the pretrained_model folder,
             policy_type (str) one of the keys in POLICY_CLASSES,
             device (str),
-            n_action_steps (int or None)
+            n_action_steps (int or None),
+            temporal_ensemble_coeff (float or None)
     output: (policy, preprocessor, postprocessor)
     """
     policy = POLICY_CLASSES[policy_type].from_pretrained(checkpoint_dir)
@@ -55,6 +105,9 @@ def load_policy_and_processors(
     if n_action_steps is not None:
         policy.config.n_action_steps = n_action_steps
         print(f"  n_action_steps overridden to {n_action_steps}")
+
+    if temporal_ensemble_coeff is not None:
+        enable_temporal_ensembling(policy, policy_type, temporal_ensemble_coeff)
 
     policy.to(device)
     policy.eval()

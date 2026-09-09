@@ -54,10 +54,27 @@ def main():
     parser.add_argument("--type", default="act")
     parser.add_argument("--trials", type=int, default=100)
     parser.add_argument("--seed", type=int, default=10)
+    parser.add_argument(
+        "--n-action-steps",
+        type=int,
+        default=None,
+        help="execute this many steps of each predicted chunk before re-planning",
+    )
+    parser.add_argument(
+        "--ensemble-coeff",
+        type=float,
+        default=None,
+        help="turn on ACT temporal ensembling with this coefficient, 0.01 in the paper",
+    )
     args = parser.parse_args()
 
     ckpt = OUTPUT_ROOT / args.run / "checkpoints" / args.checkpoint / "pretrained_model"
-    policy, pre, post = load_policy_and_processors(str(ckpt), args.type)
+    policy, pre, post = load_policy_and_processors(
+        str(ckpt),
+        args.type,
+        n_action_steps=args.n_action_steps,
+        temporal_ensemble_coeff=args.ensemble_coeff,
+    )
     adapter = LeRobotPolicyAdapter(policy, pre, post, task=TASK_STRING)
 
     result = evaluate(adapter, n_trials=args.trials, seed=args.seed,
