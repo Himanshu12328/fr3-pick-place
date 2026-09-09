@@ -90,6 +90,43 @@ For scale, the scripted oracle that generated the training data scores
 its teacher, which means further gains need a better demonstrator rather
 than a better student.
 
+#### What that looks like
+
+![100 trials of the ensemble policy](docs/proof_ensemble_100trials.png)
+
+The top panel is the plot that matters, and it is the one that caught four
+separate reward exploits earlier in this project. A correct episode reads
+flat on the table, one clean rise to about 80 mm, a plateau through the
+carry, one clean descent, and **flat afterwards**, because the arm retreats
+without disturbing what it put down. A shove would never leave the table. A
+drop would fall. A hover would never come back down.
+
+The three failures on this seed are drawn in red and are all the same
+failure: the block never left the table by more than 20 mm, so the grasp
+never happened, and the episode ran out the 600-step clock. That is the
+residual failure mode, and it is the one the project has been chasing since
+Stage 0 measured it at 62% of failures with zero near misses.
+
+A 20-trial sample on a different held-out seed is in
+[docs/proof_ensemble_20trials.png](docs/proof_ensemble_20trials.png).
+
+Regenerate either with:
+
+```powershell
+python -m src.scripts.proof_report `
+  --ensemble outputs/_keep/act_oracle_v2_030000/pretrained_model `
+             outputs/_keep/act_r34_025000/pretrained_model `
+  --trials 100 --seed 92 --tag proof_ensemble_100trials
+```
+
+#### Trained weights
+
+The two checkpoints that make up the ensemble are published on the
+[releases page](https://github.com/Himanshu12328/fr3-pick-place/releases),
+since datasets and training outputs are not tracked in the repository. Each
+archive holds the `pretrained_model` directory only, which is what inference
+needs; optimiser state for resuming training is not included.
+
 The change that produced it was not architecture, resolution or scale. The
 training labels had been collected with the reactive DAgger labeller, whose
 fixed 12 mm target lead produces one flat speed for the whole episode
