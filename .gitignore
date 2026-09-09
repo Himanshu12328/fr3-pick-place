@@ -1,9 +1,9 @@
-@"
 # Virtual environment
 .venv/
 
 # Third-party assets
 mujoco_menagerie/
+graphify-out/
 
 # Data and outputs — large, regenerable
 data/
@@ -19,7 +19,9 @@ __pycache__/
 *.pyc
 *.egg-info/
 
+# Local agent tooling
+.claude/
+
 # Editor
 .vscode/
 .idea/
-"@ | Out-File -FilePath .gitignore -Encoding utf8

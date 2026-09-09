@@ -82,7 +82,15 @@ COLLECT_WIDTH, COLLECT_HEIGHT = 640, 480
 # whole-scene 90 percent crop into a small centre patch and the policy
 # goes effectively blind. This dropped measured success from 60 percent to
 # 0.4 percent with no error raised.
-TRAIN_WIDTH, TRAIN_HEIGHT = 160, 128
+#
+# Overridable by environment variable so a higher resolution dataset can be
+# collected and trained without editing the file, while an existing 160x128
+# checkpoint stays evaluable in the same working tree. Evaluation does not
+# rely on this default: `eval/strict.py` reads the resolution out of the
+# checkpoint's own config and renders at that, which is the only version of
+# this constraint that cannot silently drift.
+TRAIN_WIDTH = int(os.environ.get("FR3_TRAIN_WIDTH", 160))
+TRAIN_HEIGHT = int(os.environ.get("FR3_TRAIN_HEIGHT", 128))
 
 # ------------------------------------------------------- rates ----------
 

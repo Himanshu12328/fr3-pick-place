@@ -73,6 +73,8 @@ GRIPPER_CLOSED = 0.0  # commanded closed; the PD force clamp does the rest
 # either way and flipping them tends to feel worse.
 OPERATOR_SIGN_X = -1.0
 OPERATOR_SIGN_Y = -1.0
+OPERATOR_SIGN_YAW = -1.0
+OPERATOR_SIGN_PITCH = -1.0
 
 
 def apply_deadzone(value, deadzone=DEADZONE):
@@ -188,8 +190,8 @@ class DualSenseTeleop:
             normalise_trigger(ax[AX_R2]) - normalise_trigger(ax[AX_L2])
         ) * LINEAR_SPEED
 
-        wy = apply_deadzone(-ax[AX_RIGHT_Y]) * ANGULAR_SPEED  # pitch
-        wz = apply_deadzone(-ax[AX_RIGHT_X]) * ANGULAR_SPEED  # yaw
+        wy = apply_deadzone(-ax[AX_RIGHT_Y]) * ANGULAR_SPEED * OPERATOR_SIGN_PITCH  # pitch
+        wz = apply_deadzone(-ax[AX_RIGHT_X]) * ANGULAR_SPEED * OPERATOR_SIGN_YAW  # yaw
         wx = (
             self.pad.get_button(BTN_R1) - self.pad.get_button(BTN_L1)
         ) * ANGULAR_SPEED  # roll

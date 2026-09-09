@@ -25,7 +25,7 @@ import time
 import mujoco
 import numpy as np
 
-from src.config import SCENE_PATH
+from src.config import SCENE_PATH, TRAIN_HEIGHT, TRAIN_WIDTH
 from src.controllers.impedance import ImpedanceController
 from src.data.task import check_success, sample_block_pose, set_block_pose
 
@@ -37,7 +37,12 @@ BLOCK_QPOS_ADR = 9
 BLOCK_QVEL_ADR = 9
 
 CAMERAS = ["external", "wrist_left", "wrist_right"]
-CAM_WIDTH, CAM_HEIGHT = 160, 128
+# Taken from config rather than restated here. Two copies of the render
+# resolution is exactly the divergence config.py warns about: the backbone
+# accepts any size silently, so a mismatch costs success rate and raises
+# nothing. `strict.render_size_for_checkpoint` overrides both from the
+# checkpoint itself at evaluation time.
+CAM_WIDTH, CAM_HEIGHT = TRAIN_WIDTH, TRAIN_HEIGHT
 
 POLICY_HZ = 30
 CONTROL_HZ = 1000
@@ -169,6 +174,7 @@ def run_trial(
     max_steps=MAX_POLICY_STEPS,
     need_images=True,
     record_frames=False,
+    record_trace=False,
 ):
     """
     Runs one episode and returns whether the task was completed.
@@ -195,6 +201,12 @@ def run_trial(
     frames = []
     success = False
 
+    # A success rate says how often a policy works and never how it fails.
+    # These four series are the minimum needed to tell the failure modes
+    # apart afterwards: whether the block was ever lifted, whether it was
+    # dropped, and where the arm was when it went wrong.
+    trace = {"block": [], "grip": [], "ee": []} if record_trace else None
+
     for step in range(max_steps):  # noqa: B007 - step is used after the loop
         obs = build_observation(data, renderer, CAMERAS, need_images)
         action = np.asarray(policy(obs), dtype=np.float64)
@@ -214,6 +226,11 @@ def run_trial(
             renderer.update_scene(data, camera="external")
             frames.append(renderer.render())
 
+        if trace is not None:
+            trace["block"].append(np.array(data.xpos[block_id], dtype=np.float32))
+            trace["grip"].append(grip)
+            trace["ee"].append(ctrl.current_pose(data)[0].astype(np.float32))
+
         success, dist = check_success(data, block_id)
         if success:
             break
@@ -226,11 +243,21 @@ def run_trial(
         "distance": final_dist,
         "block_start": block_pos,
         "frames": frames,
+        "trace": (
+            {k: np.asarray(v) for k, v in trace.items()} if trace is not None else None
+        ),
+        "timed_out": (step + 1) >= max_steps and not final_success,
     }
 
 
 def evaluate(
-    policy, n_trials=50, seed=0, need_images=True, save_video_dir=None, verbose=True
+    policy,
+    n_trials=50,
+    seed=0,
+    need_images=True,
+    save_video_dir=None,
+    verbose=True,
+    record_trace=False,
 ):
     """
     Runs n_trials randomised episodes and reports the success rate.
@@ -258,6 +285,13 @@ def evaluate(
     )
     rng = np.random.default_rng(seed)
 
+    # Privileged policies need the simulator handles, not just observations.
+    # Mirrors the reset() hook below: the harness offers the capability and
+    # a policy takes it only if it has a use for it, so a learned policy is
+    # unaffected and the two stay interchangeable.
+    if hasattr(policy, "bind"):
+        policy.bind(model, data)
+
     renderer = None
     if need_images or save_video_dir:
         renderer = mujoco.Renderer(model, height=CAM_HEIGHT, width=CAM_WIDTH)
@@ -278,6 +312,7 @@ def evaluate(
             rng,
             need_images=need_images,
             record_frames=save_video_dir is not None,
+            record_trace=record_trace,
         )
         results.append(r)
 
