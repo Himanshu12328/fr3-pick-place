@@ -28,6 +28,25 @@ the veto.
 Placements come from the same generator in the same order, so any trial
 index is reproducible without running the ones before it.
 
+### What it found, which is neither of the two answers above
+
+The policy commands the descent correctly — target at -3.5 mm relative to
+the block, held for 15 consecutive steps — and the tool sits at +21.9 mm
+moving 0.01 to 0.08 mm per step, against 1.2 to 1.5 in a free descent, with
+the fingers wide open. So the command does descend and the tool does not
+follow, which reads as the first answer. But the controller is not at
+fault: the commanded orientation is tracked to 0.4 degrees and both wrist
+joints sit at a fifth of their range.
+
+The arm is in **contact**. A finger is resting on the block's top face,
+because the gripper arrived with too little clearance to pass it:
+
+    clearance = 40 - (lateral offset + 22 * (cos e + sin e))
+
+with `e` the commanded yaw error, a finger face 40 mm from the tool centre
+when open, and a 44 mm cube. Every jam in 200 trials has under 6 mm of that
+against a median of 12. See docs/PATH_TO_99.md S25.
+
 Run:
     python -m src.scripts.probe_stuck_grasp --seed 61 --trials 18 23
     python -m src.scripts.probe_stuck_grasp --seed 92 --trials 11 21 --mode veto
@@ -40,7 +59,7 @@ import mujoco
 import numpy as np
 
 from src.config import BLOCK_QPOS_ADR, BLOCK_QVEL_ADR, LOG_DIR
-from src.data.task import BLOCK_Z, sample_block_pose, set_block_pose
+from src.data.task import BLOCK_Z, check_success, sample_block_pose, set_block_pose
 from src.eval import rollout as R
 from src.eval.strict import evaluate_trace
 
@@ -168,8 +187,35 @@ def replay(model, data, ctrl, policy, renderer, block_pos, block_quat,
         if episode_complete(ee, block, grip):
             break
 
+    # Let the block land and stop rolling before the final check, exactly as
+    # strict.run_strict_trial does, and hold the last commanded gripper
+    # rather than forcing it open so a policy that ended still gripping
+    # fails honestly.
+    #
+    # This settle was missing and `evaluate_trace` was being handed
+    # settled_ok=False unconditionally, so every trial this script replayed
+    # was reported as a strict failure whatever it did. The height and yaw
+    # traces it exists to record were unaffected, but the verdict beside
+    # them was meaningless, and a diagnostic that prints a wrong verdict is
+    # the class of defect this project has paid for five times in the
+    # evaluation harness alone.
+    from src.eval.strict import SETTLE_STEPS
+
+    for _ in range(SETTLE_STEPS):
+        data.qfrc_applied[: R.N_ARM] = ctrl.compute_torque(data)
+        data.qfrc_applied[R.FINGER_DOFS] = R.gripper_torque(data, grip)
+        mujoco.mj_step(model, data)
+
+    settled_ok, settled_dist = check_success(data, block_id)
+
+    trace["block"].append(np.array(data.xpos[block_id], dtype=np.float32))
+    trace["ee"].append(ctrl.current_pose(data)[0].astype(np.float32))
+    trace["target"].append(trace["target"][-1])
+    trace["grip"].append(grip)
+    trace["block_vz"].append(float(data.qvel[BLOCK_QVEL_ADR + 2]))
+
     t = {k: np.asarray(v) for k, v in t.items()}
-    row = evaluate_trace(trace, steps, False, 0.0,
+    row = evaluate_trace(trace, steps, settled_ok, settled_dist,
                          recovery_events=int(getattr(policy, "recovery_events", 0)))
     return t, row, steps
 

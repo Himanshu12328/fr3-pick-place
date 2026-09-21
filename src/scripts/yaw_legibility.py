@@ -117,6 +117,89 @@ def render_synthetic(sizes, n, cameras, seed=7):
     return out, targets
 
 
+def render_closeup(sizes, n, cameras, hover_m=0.10, seed=11):
+    """
+    Renders the block from the pose the policy grasps from, with the wrist
+    yaw held fixed so the arm cannot leak the answer.
+
+    The home-pose test answers "is the yaw readable from where the episode
+    starts", and the answer is no at every resolution tried. That is not
+    quite the operative question. The policy does not have to know the yaw
+    at the start; it has the whole approach to find out, and the wrist
+    cameras end up a hand's breadth from the block. What decides the grasp
+    is whether the yaw is readable **from there**.
+
+    Making that non-leaky needs care. The oracle rotates the wrist into
+    alignment as it descends, so rendering a real approach frame lets a
+    probe read the yaw off the arm and call it vision. Here the arm is
+    driven to a canonical pose -- directly above the block at a fixed
+    height, gripper down, and the wrist yaw pinned to the home value rather
+    than to the block -- so the arm's configuration carries position
+    information but no yaw information at all. Anything the probe recovers
+    about yaw came from the block's pixels.
+
+    input:  sizes (list of (w,h)), n (int) samples, cameras (list of str),
+            hover_m (float) height above the block centre, seed (int)
+    output: (dict of (w,h) -> dict of camera -> uint8 array, targets (N,2))
+    """
+    from src.data.task import BLOCK_Z, sample_block_pose
+    from src.eval import rollout as R
+
+    model, data = R.setup_model()
+    home = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_KEY, "home")
+    ctrl = R.ImpedanceController(
+        model, data, kp_trans=R.KP_TRANS, kp_rot=R.KP_ROT, zeta=R.ZETA,
+        kp_null=10.0, zeta_null=1.0, n_arm=R.N_ARM, verbose=False,
+    )
+
+    rng = np.random.default_rng(seed)
+    poses = [sample_block_pose(rng) for _ in range(n)]
+
+    # The wrist orientation every sample is driven to. Taken from the home
+    # keyframe once, so it is identical for every block and cannot encode
+    # the block's yaw.
+    mujoco.mj_resetDataKeyframe(model, data, home)
+    mujoco.mj_forward(model, data)
+    _, fixed_quat = ctrl.current_pose(data)
+    fixed_quat = np.asarray(fixed_quat, dtype=np.float64).copy()
+
+    out, targets = {}, None
+    for (w, h) in sizes:
+        renderer = mujoco.Renderer(model, height=h, width=w)
+        imgs = {c: [] for c in cameras}
+        tgt = []
+        t0 = time.perf_counter()
+
+        for pos, quat in poses:
+            mujoco.mj_resetDataKeyframe(model, data, home)
+            set_block_pose(model, data, np.asarray(pos, dtype=np.float64),
+                           np.asarray(quat, dtype=np.float64),
+                           BLOCK_QPOS_ADR, BLOCK_QVEL_ADR)
+            mujoco.mj_forward(model, data)
+
+            target = np.array([pos[0], pos[1], BLOCK_Z + hover_m])
+            ctrl.set_target(target, fixed_quat)
+            for _ in range(600):
+                data.qfrc_applied[: R.N_ARM] = ctrl.compute_torque(data)
+                data.qfrc_applied[R.FINGER_DOFS] = R.gripper_torque(data, 0.04)
+                mujoco.mj_step(model, data)
+
+            for c in cameras:
+                renderer.update_scene(data, camera=c)
+                imgs[c].append(renderer.render().copy())
+
+            theta = 2.0 * np.arctan2(quat[3], quat[0])
+            tgt.append([np.sin(SYMMETRY * theta), np.cos(SYMMETRY * theta)])
+
+        renderer.close()
+        out[(w, h)] = {c: np.stack(v) for c, v in imgs.items()}
+        targets = np.asarray(tgt, dtype=np.float32)
+        print(f"  rendered {n} close-up frames at {w}x{h} in "
+              f"{time.perf_counter() - t0:.0f}s", flush=True)
+
+    return out, targets
+
+
 def render_frame_zero(sizes, episodes, cameras, data_dir):
     """
     Renders the home-pose view of each episode's block at each resolution.
@@ -248,6 +331,10 @@ def main():
     p.add_argument("--synthetic", type=int, default=0,
                    help="draw this many random block poses instead of "
                         "reading recorded episodes")
+    p.add_argument("--closeup", type=int, default=0,
+                   help="render this many samples from the grasp pose with "
+                        "the wrist yaw pinned, instead of the home pose")
+    p.add_argument("--hover", type=float, default=0.10)
     p.add_argument("--tag", default="yaw_legibility")
     args = p.parse_args()
 
@@ -256,7 +343,12 @@ def main():
         w, h = s.lower().split("x")
         sizes.append((int(w), int(h)))
 
-    if args.synthetic:
+    if args.closeup:
+        print(f"rendering {args.closeup} close-up views from the grasp pose, "
+              f"wrist yaw pinned, cameras {args.cameras}")
+        rendered, tgt = render_closeup(sizes, args.closeup, args.cameras,
+                                       hover_m=args.hover)
+    elif args.synthetic:
         print(f"rendering {args.synthetic} random block poses at the home "
               f"pose, cameras {args.cameras}")
         rendered, tgt = render_synthetic(sizes, args.synthetic, args.cameras)

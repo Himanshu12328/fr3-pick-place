@@ -64,11 +64,33 @@ in choosing its checkpoint.
 | `act_oracle_v2`, ResNet18, chunk 32 | 96.7% | 92.3% ± 2.6% | 600 |
 | `act_chunk64`, ResNet18, chunk 64 | 92.7% | 90.2% ± 1.1% | 600 |
 | `act_r34`, ResNet34, chunk 32 | 95.0% | 93.0% ± 1.3% | 600 |
-| **ensemble of the two chunk-32 policies** | **98.2%** | **97.0%** | **1,200** |
+| `act_chunk64` + the two above, three-policy ensemble | — | 92.0% | 200 |
+| ensemble of the two chunk-32 policies, seeds 71-86 | 98.2% | 97.0% | 1,200 |
+| ensemble of the two chunk-32 policies, seeds 101-116 | 97.4% | 95.75% | 1,200 |
+| **ensemble of the two chunk-32 policies, all 24 seeds** | **97.8%** | **96.38%** | **2,400** |
 
-**97.0% strict, 95% confidence interval 96.0 to 98.0**, pooled over twelve
-seeds of 100 trials. Per seed:
-98/97/97/99/97/97/96/100/96/96/97/94.
+**96.38% strict, 95% confidence interval 95.63 to 97.12**, pooled over
+twenty-four seeds of 100 trials.
+
+> **This supersedes a 97.0% headline.** That figure was 1,164/1,200 on
+> seeds 71-86. Twelve further seeds that had never been used for anything —
+> 101-106 and 111-116 — give **95.75%**, 1.25 points lower. The standard
+> error of that difference is 0.76 points, so z = 1.64 and the gap is *not*
+> significant at the 5% level; nothing was fitted to the earlier seeds and
+> the earlier measurement was not wrong. What it shows is that **1,200
+> trials cannot quote a strict rate to the tenth of a point**: two clean
+> 1,200-trial measurements of one unchanged policy landed 1.25 points
+> apart. The best estimate is now the 2,400-trial pool.
+
+Per seed, all 24: 98/97/97/99/97/97 · 96/100/96/96/97/94 ·
+95/97/94/95/97/94 · 97/96/98/98/94/94.
+
+A third ensemble member makes it **worse**, not better: adding
+`act_chunk64` @ 27,500 takes 97.0% to 92.0% on the same 200 trials. It
+replans on a 64-step cadence against the others' 32, so averaging the three
+produces an incoherent plan rather than a better one. Ensembling worked
+because two policies failed in *different regions*, and that is not a
+property more members supply automatically.
 
 The three single policies differ by 2.8 points with standard errors near 1,
 so **architecture is not the binding constraint** and none of them passes
@@ -86,9 +108,21 @@ the ensemble runs two policies per step, so inference costs about 5.6 s per
 trial against a single ACT's 2.8 s.
 
 For scale, the scripted oracle that generated the training data scores
-**97.5% strict** under the same jitter. The student has effectively caught
-its teacher, which means further gains need a better demonstrator rather
-than a better student.
+**99.7% strict** under the same jitter, measured over 1,000 trials. The
+student is **2.7 points behind its teacher**, and the gap lives entirely in
+the student.
+
+> **This corrects an earlier claim.** Until `docs/PATH_TO_99.md` was
+> written, this section read "the scripted oracle scores 97.5% strict. The
+> student has effectively caught its teacher, which means further gains
+> need a better demonstrator rather than a better student." That 97.5% was
+> `39/40` — forty trials, against a protocol this repository states
+> elsewhere as "20 trials is ±11% and 100 is ±4%". Remeasured over 1,000
+> trials the teacher is at 99.7%, three failures in a thousand. The two
+> interventions that conclusion recommended — collect at lower jitter,
+> filter the training set to strict-clean episodes — were aimed at a
+> problem that does not exist, and the demonstrations are not the limiting
+> factor.
 
 #### What that looks like
 
@@ -106,6 +140,73 @@ failure: the block never left the table by more than 20 mm, so the grasp
 never happened, and the episode ran out the 600-step clock. That is the
 residual failure mode, and it is the one the project has been chasing since
 Stage 0 measured it at 62% of failures with zero near misses.
+
+#### What the residual failure actually is
+
+"The grasp never happened" is a correct description and it names no
+mechanism. `docs/PATH_TO_99.md` takes it apart over 200 instrumented
+trials. In order:
+
+1. The policy's commanded **wrist yaw** is under-rotated, by a constant
+   fraction of the rotation the block asks for: `error = 0.115 × offset`,
+   r = 0.476, and the ratio holds across every bin from 0 to 45 degrees.
+   This is shrinkage toward the mean, not a failure at one particular
+   angle.
+2. So the error grows with the rotation required. At 40 to 45 degrees of
+   block yaw offset it averages 5.5 degrees and reaches 18.3.
+3. Past a few degrees the open fingers cannot straddle a 44 mm cube. One
+   comes down on its top face and **the descent jams** — the tool sits at
+   +21.9 mm above the block's centre, which is exactly its top face, moving
+   0.01 to 0.08 mm per step against 1.2 to 1.5 in a free descent, with the
+   fingers wide open.
+4. The policy is meanwhile commanding the descent **correctly**, target at
+   −3.5 mm relative to the block, and tracking the commanded orientation to
+   0.4 degrees with both wrist joints at a fifth of their range. The arm is
+   not mistimed and the controller is not at fault.
+5. The fingers then close where the arm stopped, which is the "+21.6 mm"
+   that `PATH_TO_97.md` S17 identified as the defect. It is the symptom.
+
+Failures therefore concentrate at large block yaw offsets — 0 of 122 trials
+below 30 degrees, and 7.7% above — which is why they look random when
+binned by block *position*, where they show no pattern at all.
+
+Steps 1 to 3 are **two terms of one budget**, and that is why four separate
+single-variable explanations — timing, lateral offset, the cube's symmetry
+boundary, the wrist yaw — each looked right on a handful of trials and each
+failed at scale:
+
+```
+clearance = 40 mm − ( lateral offset + 22·(cos e + sin e) )
+```
+
+a finger face sits 40 mm from the tool centre when open, and a 44 mm cube
+at yaw error `e` presents `22(cos e + sin e)` of half-extent. Every jam in
+200 trials sits under **6 mm** of clearance against a median of 12, and
+11 trials are in that band of which 4 jam — a 36% failure rate against a 2%
+base rate. Neither term separates on its own.
+
+![the residual failure](docs/yaw_jam.png)
+
+This rules out a class of fixes rather than suggesting one.
+
+* A runtime layer that refuses the mistimed close and forces a replan was
+  built and measured in six configurations: **all six score 97.00% and fail
+  the same six trials.** Refusing a close does not unjam an arm, and
+  replanning returns the same plan from the same observation.
+* Correcting the wrist yaw using the block's **true orientation from the
+  simulator** — no perception error at all — takes 97.0% to **96.0%**. It
+  rescues the two jams whose extent term is large, does nothing for the one
+  at 0.8° of yaw error, and breaks four trials that previously passed by
+  walking the policy off its training distribution.
+* The block's yaw is **not recoverable from these three camera views**:
+  a purpose-built estimator trained on 6,500 non-leaky samples sits at
+  22.3° median error at 160×128 and 21.4° at 320×256, against a chance
+  level of 22.5°. `PATH_TO_97.md` S3 ruled resolution out on *position*
+  evidence, and position is legible to 3.1 mm; yaw had never been measured.
+
+So the lateral term is the one with room in it, and the auxiliary
+block-position target built and validated in `PATH_TO_97.md` S5 and never
+used is aimed exactly at it. That is the next run this evidence supports.
 
 A 20-trial sample on a different held-out seed is in
 [docs/proof_ensemble_20trials.png](docs/proof_ensemble_20trials.png).
@@ -868,14 +969,31 @@ characters, which crashes the console. Set `PYTHONIOENCODING=utf-8`.
       used for anything. The two sets differ by 1.0 point, which is noise;
       for contrast the chunk-64 experiment shrank by 6.0 points between its
       screening and reporting seeds and reversed sign
-* [ ] Beat the teacher. The oracle that generated the training data is
-      itself 97.5% strict under the jitter it was collected with, so the
-      student has caught it. Further gains need a better demonstrator:
-      collect at lower jitter, or filter the training set to episodes that
-      pass the strict gates. Neither was run
-* [ ] A multimodal task variant. This is the axis ACT and diffusion were
-      designed to differ on, and the current single-mode task does not test
-      it
+* [x] Stage 6. **Diagnosed the residual 3%, and ruled out the runtime fix
+      for it.** The teacher was remeasured at **99.7% strict over 1,000
+      trials**, not the 97.5% a 40-trial sample had reported, so the
+      student is 2.7 points behind it and the gap is the student's. The
+      residual failure is a wrist-yaw error that is *proportional* to the
+      rotation the block requires — `error = 0.115 × offset`, holding
+      across every bin from 0 to 45 degrees — which jams the descent on the
+      block's top face. A runtime layer that refuses the mistimed close and
+      forces a replan was built and measured in six configurations: **all
+      six score 97.00% and fail the same six trials.** See
+      docs/PATH_TO_99.md
+* [ ] Beat the teacher. The 2.7 points to the demonstrator are the
+      student's to close, and the levers that have been ruled out by
+      measurement now are: a runtime supervisor (six configurations, no
+      change), a third ensemble member (97.0% → 92.0%, a regression), more
+      frequent or less frequent replanning, DAgger, a bigger backbone, and
+      higher image resolution for block *position*. What has not been tried
+      is a policy whose orientation target is not a discontinuous function
+      of a symmetric object's pose
+* [x] A multimodal task variant — **it turns out the task was already
+      multimodal and nobody had noticed.** A cube is symmetric every 90
+      degrees, so four wrist orientations grasp it equally well and the
+      absolute yaw label is a sawtooth in the block's yaw. This is the axis
+      ACT and diffusion were designed to differ on, and it has been present
+      in the single-mode task from the beginning
 * [ ] π0 fine-tuning
 * [ ] Sim-to-real transfer
 
