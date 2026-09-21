@@ -65,12 +65,45 @@ in choosing its checkpoint.
 | `act_chunk64`, ResNet18, chunk 64 | 92.7% | 90.2% ± 1.1% | 600 |
 | `act_r34`, ResNet34, chunk 32 | 95.0% | 93.0% ± 1.3% | 600 |
 | `act_chunk64` + the two above, three-policy ensemble | — | 92.0% | 200 |
-| ensemble of the two chunk-32 policies, seeds 71-86 | 98.2% | 97.0% | 1,200 |
-| ensemble of the two chunk-32 policies, seeds 101-116 | 97.4% | 95.75% | 1,200 |
-| **ensemble of the two chunk-32 policies, all 24 seeds** | **97.8%** | **96.38%** | **2,400** |
+| `act_oracle_v2` + `act_r34`, seeds 71-86 | 98.2% | 97.0% | 1,200 |
+| `act_oracle_v2` + `act_r34`, seeds 101-116 | 97.4% | 95.75% | 1,200 |
+| `act_oracle_v2` + `act_r34`, all 24 seeds | 97.8% | 96.38% | 2,400 |
+| `act_aux_xy` alone, auxiliary block-position target | 97.5% | 96.50% | 200 |
+| **`act_oracle_v2` + `act_aux_xy`, 12 never-used seeds** | **99.0%** | **98.83%** | **1,200** |
 
-**96.38% strict, 95% confidence interval 95.63 to 97.12**, pooled over
-twenty-four seeds of 100 trials.
+**98.83% strict, 95% confidence interval 98.23 to 99.44**, pooled over
+twelve seeds of 100 trials that had never been used for anything. Per seed
+100/98/98/98/98/98 · 98/100/100/100/99/99, sd 0.90.
+
+Against the previous best of 96.38% over 2,400 trials that is **+2.46
+points, standard error 0.49, z = 5.00** — significant at any conventional
+level. The scripted demonstrator scores 99.70%, so the student is now
+**0.87 points behind its teacher** rather than 2.7.
+
+The second member, `act_aux_xy`, is the auxiliary-supervision idea that had
+been built and validated in `docs/PATH_TO_97.md` S5 and never run. It adds
+the block's x and y to the action vector as extra regression targets, so
+the representation is required to carry the block's position rather than
+merely permitted to. Its effect was exactly the one predicted from the
+clearance budget below: maximum lateral offset fell from 29.75 mm to
+14.38, and the clearance minimum went from **−12.87 mm to +1.41**.
+
+On its own it is **not** significantly better than the baseline — 96.50%
+against 94.00% on identical trials, exact McNemar **p = 0.36**. What makes
+it valuable is that its failures are **disjoint** from the baseline's: of
+200 paired trials, 12 fail only under the baseline, 7 only under the aux
+policy, and **none fail under both**. The baseline's failures all sit at
+high block yaw offsets, the aux policy's at low ones. Averaging two
+policies that fail in different places is the one situation where an
+ensemble beats either, which is why this pairing gains 2.5 points where a
+third `act_chunk64` member lost five.
+
+The yaw is **not** supervised, deliberately: it is unreadable from these
+cameras (see below), and a target the input does not contain adds an
+unlearnable term to the loss. The aux target did trade some orientation
+accuracy for the position gain — median commanded yaw error rose from
+2.31° to 4.10° — which is why the jam count barely moved even though the
+clearance tail was repaired.
 
 > **This supersedes a 97.0% headline.** That figure was 1,164/1,200 on
 > seeds 71-86. Twelve further seeds that had never been used for anything —
@@ -223,6 +256,23 @@ nothing — shows the difference is a distribution's **tail**, not its centre:
 The teacher's worst trial in 400 has more clearance than the student's
 fifth percentile, and it never enters the band where every student jam
 happens. The median clearances differ by only 2.88 mm.
+
+**The budget is monotone across every policy measured, and it predicted the
+98.83% result before the success rate could confirm it:**
+
+| policy | strict | **p5 clearance** | under 6 mm | jams |
+|---|---|---|---|---|
+| `act_oracle_v2` alone | 92.00% | 1.83 mm | 17.50% | 4 / 200 |
+| `act_oracle_v2` + `act_r34` | 97.00% | 5.08 mm | 6.00% | 4 / 200 |
+| **`act_oracle_v2` + `act_aux_xy`** | **98.83%** | **7.08–7.32 mm** | 2.50–3.00% | 6 / 1,200 |
+| scripted demonstrator | 99.70% | 11.94 mm | 0.00% | 0 / 400 |
+
+This is why it is the quantity to tune on. A strict rate needs thousands of
+trials to resolve a point — two clean 1,200-trial measurements of one
+unchanged policy landed 1.25 points apart — whereas p5 clearance is
+continuous, measurable on 200 trials, and spans 1.83 to 11.94 mm across
+policies covering under eight points of success. `clearance_report.py`
+computes it from any monitor-mode run.
 
 This also validates the 6 mm threshold rather than fitting it: it was
 derived from 4 jams against 194 passes in one population, and a second,

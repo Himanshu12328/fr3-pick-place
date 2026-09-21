@@ -1279,3 +1279,155 @@ If prediction 1 fails — if the p5 clearance does not move — then the
 lateral error is not a representation problem either, and the budget's
 remaining explanation is the yaw term alone, which would make camera
 placement the only lever left in the project.
+
+---
+
+## S34. 98.83%. The auxiliary position target, and why it worked twice over
+
+The run S33 launched, scored against the four predictions written before it.
+
+### The single policy
+
+| | strict | p5 clearance | min clearance | under 6 mm | jams | grasped then failed |
+|---|---|---|---|---|---|---|
+| `act_oracle_v2` @30k, the baseline | 92.00% | 1.83 mm | **−12.87 mm** | 35 of 200 | 4 | 12 |
+| `act_aux_xy` @30k | 93.50% | **6.33 mm** | +1.41 mm | 8 of 200 | 5 | 8 |
+| `act_aux_xy` @25k | — | 5.46 mm | +1.15 mm | 12 of 200 | 3 | 4 |
+
+| # | prediction | outcome |
+|---|---|---|
+| 1 | p5 clearance rises from 1.83 mm into 3 to 6 mm | **right**, 6.33 mm, slightly better than predicted |
+| 2 | jams fall from 4 to 2 or 3, not 0 | **wrong**, 5 jams at 30k, 3 at 25k |
+| 3 | strict rate moves about a point, unmeasurable as such | **right**, 92.00% to 93.50% |
+| 4 | it will not reach the teacher's 11.94 mm | **right**, 6.33 mm |
+
+The lateral term moved exactly as designed. Maximum lateral offset fell
+from **29.75 mm to 14.38**, and the clearance minimum went from −12.87 mm
+to **+1.41** — the negative tail that produced the jams is gone.
+
+**Prediction 2 failed for an instructive reason.** The yaw got worse:
+median commanded yaw error 2.31° to 4.10°, p95 6.04° to 10.96°. Two extra
+regression targets on the same action head bought position accuracy by
+spending orientation accuracy. The budget has two terms and improving one
+degraded the other, which is why the jam count did not follow the
+clearance.
+
+### Checkpoint selection, and the sweep tax paid again
+
+Screening on seeds 61 and 62, 40 trials per checkpoint: 86.25% at 20k,
+**100.00% at 25k**, 96.25% at 27.5k. On never-used seeds 121-124 the 25k
+checkpoint scores **96.50%**, a 3.5-point regression — squarely inside the
+5-to-7-point sweep tax this project has now measured five times.
+
+### The finding that mattered: the failures are disjoint
+
+Paired on the identical 200 trials of seeds 121-124:
+
+| | strict | failures |
+|---|---|---|
+| `act_oracle_v2` @30k | 94.00% | 12 |
+| `act_aux_xy` @25k | 96.50% | 7 |
+
+| | count |
+|---|---|
+| baseline failed, aux passed | 12 |
+| baseline passed, aux failed | 7 |
+| **failed by both** | **0** |
+
+Exact McNemar on the 19 discordant pairs: two-sided **p = 0.36**. The
++2.50-point difference is **not significant**, and on its own the aux
+policy is not demonstrably the better model.
+
+What is significant is *where* each fails, and this is not a rate:
+
+| | block yaw offset of its failures |
+|---|---|
+| baseline | 26.4, 31.5, 35.8, 36.6, 39.2, 39.2, 40.0, 40.1, 40.9, 42.1, 43.3, 43.9 |
+| aux | **3.7, 12.2, 12.6, 17.3, 17.3, 21.1, 30.6** |
+
+The baseline fails where the wrist has furthest to turn, exactly as S24 and
+S25 describe. The aux policy fails nowhere near there — it has eliminated
+that mode and acquired a different one at low yaw offsets. **Zero trials in
+200 are failed by both.**
+
+That is precisely the condition `ensemble.py` was written for: "two models
+that fail in different places is the only situation where averaging them
+can beat either." Here it is not a regional split but a disjoint one.
+
+### The result
+
+`act_oracle_v2` @30,000 averaged with `act_aux_xy` @25,000:
+
+| seed set | strict | loose | per seed |
+|---|---|---|---|
+| 121-124, the seeds that suggested the experiment | 98.50% | 99.00% | 98 / 100 / 100 / 96 |
+| **131-136, never used for anything** | **98.33% ± 0.75%** | 98.50% | 100/98/98/98/98/98 |
+| **141-146, never used for anything** | **99.33% ± 0.75%** | 99.50% | 98/100/100/100/99/99 |
+| **pooled clean, n=1,200** | **98.83%** | 99.00% | sd 0.90 across 12 seeds |
+
+**98.83% strict, 95% confidence interval 98.23 to 99.44.**
+
+The idea-contaminated set came in at 98.50% and the clean sets at 98.83%,
+so the shrinkage this time is **negative**: nothing was lost on fresh
+seeds, against the 1.25 points S27 lost and the 6.0 points the chunk-64
+experiment lost in `PATH_TO_97.md` S14.
+
+| | strict | n |
+|---|---|---|
+| previous best, `act_oracle_v2` + `act_r34`, all 24 seeds | 96.38% | 2,400 |
+| **this ensemble, 12 never-used seeds** | **98.83%** | **1,200** |
+| improvement | **+2.46 points**, se 0.49, **z = 5.00** | |
+| scripted demonstrator | 99.70% | 1,000 |
+
+The improvement is significant at any conventional level, and the student
+is now **0.87 points behind its teacher** rather than 2.7.
+
+| gate | pass |
+|---|---|
+| `carried` | 99.67% |
+| `lifted` | 99.42% |
+| `undisturbed` | 99.25% |
+| `delivered` / `lifted_off` / `home` | 99.00% |
+| `released_low` / `in_time` | 98.92% |
+| `demo_like` | 98.83% |
+
+Mean lift **81 mm** against the demonstrations' 80. Trajectory score 0.976
+against the oracle's 0.991.
+
+### The clearance budget tracked all of it
+
+| policy | strict | **p5 clearance** | under 6 mm | jams |
+|---|---|---|---|---|
+| `act_oracle_v2` alone | 92.00% | 1.83 mm | 17.50% | 4 / 200 |
+| old ensemble, v2 + r34 | 97.00% | 5.08 mm | 6.00% | 4 / 200 |
+| **new ensemble, v2 + aux_xy** | **98.83%** | **7.08–7.32 mm** | 2.50–3.00% | 6 / 1,200 |
+| scripted demonstrator | 99.70% | 11.94 mm | 0.00% | 0 / 400 |
+
+Monotone in both directions across four policies and a 7.7-point range of
+success. S32 proposed p5 clearance as the signal to tune on because a
+success rate cannot resolve a point without thousands of trials; it then
+predicted the direction and rough size of this result before the success
+rate could confirm it.
+
+### One bug, found by trying the experiment
+
+`EnsemblePolicy` could not combine the two policies at all. An
+aux-supervised policy emits a 10-vector, a plain one an 8-vector, and
+`np.stack` raised `ValueError: all input arrays must have the same shape`
+several frames deep, naming nothing. The auxiliary columns are a training
+target and never an action — the harness reads `action[:3]`, `[3:7]` and
+`[7]` and ignores the rest — so the members are now truncated to eight
+dimensions before averaging.
+
+### What is left
+
+Fourteen failures in 1,200. Six are jams, and the two clearance minima
+among them are −1.88 mm and +1.31 mm, so the two-term budget is still what
+decides them. The yaw term remains unimprovable from these three camera
+views, and the aux target made it slightly worse in exchange for the
+position gain it delivered.
+
+So the ceiling of this approach is close. **99.99% is not reachable by more
+of this**, and the demonstrator's own 99.70% is now less than a point away.
+Past that, the yaw has to come from somewhere, and S24 says it is not in
+these images at any resolution tried.
