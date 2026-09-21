@@ -968,3 +968,33 @@ fails 3 times in 1,000 under the same gates. If its clearances are far
 larger than the student's, the budget is the whole story and item 1 is the
 right next run. If they are similar, something else separates 99.7% from
 96.4% and none of the three items above is aimed at it.
+
+---
+
+## S29. Recorded episodes
+
+`logs/videos_jam/`, twelve episodes of held-out seed 92 recorded through
+the strict harness, so each one includes the retreat and the settle rather
+than stopping when the block touches down.
+
+| file | what it shows |
+|---|---|
+| `strict_000_pass.mp4` … `strict_010_pass.mp4` | eleven consecutive clean pick and places |
+| **`strict_011_fail.mp4`** | **the jam.** The gripper arrives with 3.5 mm of *negative* clearance, a finger comes down on the block's top face, and the arm sits there while the policy keeps commanding a descent 25 mm below it |
+
+Trial 11 is the trial the per-step traces in S22 are taken from, and the one
+the left panel of `docs/yaw_jam.png` plots. It is worth watching before
+reading S25, because the arithmetic describes something that is completely
+obvious once seen: the hand is simply resting on the box it is trying to
+pick up.
+
+There is no video of a recovery, because there are none to record. The
+grasp-failure detector fires on exactly the right trials and the policy
+never recovers from any of them — see the table in S21.
+
+Regenerate with:
+
+```powershell
+python -m src.scripts.eval_supervised --mode monitor --seeds 92 --trials 12 `
+  --video-dir logs/videos_jam --video-n 12 --max-steps 900 --tag videos_jam
+```
