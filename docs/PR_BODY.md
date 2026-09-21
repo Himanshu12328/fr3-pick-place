@@ -1,8 +1,21 @@
-# The residual 3% diagnosed, the runtime fix for it ruled out, and two reported numbers corrected
+# 98.83% strict, and the diagnosis that got there
 
-Nine measurements. **None of them improves the policy.** Two correct a
-previously reported number downward and the rest close off directions. The
-value of the branch is the diagnosis and the ruling-out, not a better rate.
+**96.38% → 98.83% strict over 1,200 never-used trials** (95% CI 98.23 to
+99.44). Against the previous best of 96.38% over 2,400 trials that is
+**+2.46 points, se 0.49, z = 5.00**. The scripted demonstrator scores
+99.70%, so the student is now **0.87 points behind its teacher** rather
+than 2.7.
+
+It took eleven measurements to get there and **the first nine improved
+nothing** — two corrected a previously reported number downward and the
+rest closed off directions. The tenth worked because the nine had
+identified, quantitatively, which single term of the failure to attack.
+
+The order matters more than the number, so this description follows it:
+what the residual failure actually is (§3), what could not fix it (§4),
+what accounts for the gap to the demonstrator (§5), the metric that made a
+one-point improvement visible without thousands of trials (§6), and the
+intervention that followed from all of it (§7).
 
 Full running log in [`docs/PATH_TO_99.md`](docs/PATH_TO_99.md), in the form
 `PATH_TO_97.md` uses: predictions written before the runs that test them,
@@ -212,19 +225,71 @@ measurable on 200 trials, and spans an order of magnitude across policies
 eight points apart. `src/scripts/clearance_report.py` computes it from any
 monitor-mode run.
 
-## What the evidence points at next
+## 7. The intervention that followed, and the 2.46 points it gained
 
-The **lateral** term is the one with room in it — position is legible to
-3.1 mm against a p5 clearance of 5.08 mm. The auxiliary block-position
-target built and validated in `PATH_TO_97.md` S5 and never used aims
-exactly there, and `to_lerobot.py` gains an `--aux xy` option that
-supervises position only, omitting the yaw the images do not contain.
+The budget said the **lateral** term was the one with room in it: position
+is legible to 3.1 mm against a p5 clearance of 5.08. So the auxiliary
+block-position target — built and validated in `PATH_TO_97.md` S5 and never
+run — was trained, appending the block's x and y to the action so ACT
+regresses them alongside the task. The **yaw is deliberately not
+supervised**: §4 measured it at chance from these cameras, and a target the
+input does not contain only competes with the ones it does.
 
-The **yaw** term cannot be improved from these three views. This is the
-first evidence in the project pointing at camera placement rather than at
-the policy.
+It did exactly what the budget predicted. Maximum lateral offset fell from
+**29.75 mm to 14.38**, and the clearance minimum went from **−12.87 mm to
++1.41** — the negative tail that produced the jams is gone.
 
-The target is explicit and does not need a 1,200-trial run to read:
-**raise the student's fifth-percentile clearance from 5.08 mm toward the
-demonstrator's 11.94**, and watch the jam count rather than the success
-rate to see whether it helped.
+On its own the new policy is **not** significantly better: 96.50% against
+the baseline's 94.00% on identical trials, exact McNemar **p = 0.36**. What
+earns the two points is that the failures are **disjoint**:
+
+| of 200 paired trials | count |
+|---|---|
+| baseline failed, aux passed | 12 |
+| baseline passed, aux failed | 7 |
+| **failed by both** | **0** |
+
+The baseline's failures all sit at high block yaw offsets (26.4°–43.9°) and
+the aux policy's at low ones (3.7°–30.6°). That is the condition
+`ensemble.py` was written for — "two models that fail in different places is
+the only situation where averaging them can beat either" — and it is why
+this pairing gains 2.5 points where a third `act_chunk64` member lost five.
+
+| seed set | strict |
+|---|---|
+| 121-124, the seeds that suggested the experiment | 98.50% |
+| **131-136, never used** | **98.33% ± 0.75%** |
+| **141-146, never used** | **99.33% ± 0.75%** |
+| **pooled clean, n=1,200** | **98.83%** |
+
+Shrinkage from the contaminated set to the clean ones is **negative** —
+nothing was lost on fresh seeds, against the 1.25 points §2 lost and the
+6.0 points the chunk-64 experiment lost in `PATH_TO_97.md` S14.
+
+One prediction of the four was wrong, instructively: the **jam count did
+not fall**. The aux target bought position accuracy by spending orientation
+accuracy (median commanded yaw error 2.31° → 4.10°). Two terms, one budget.
+
+And the metric earned its keep — monotone across every policy measured, and
+it called the direction and rough size of this result before the success
+rate could confirm it:
+
+| policy | strict | p5 clearance |
+|---|---|---|
+| `act_oracle_v2` alone | 92.00% | 1.83 mm |
+| `act_oracle_v2` + `act_r34` | 97.00% | 5.08 mm |
+| **`act_oracle_v2` + `act_aux_xy`** | **98.83%** | **7.08–7.32 mm** |
+| scripted demonstrator | 99.70% | 11.94 mm |
+
+## What is left
+
+Fourteen failures in 1,200; six are jams, and their clearance minima are
+−1.88 mm and +1.31 mm, so the two-term budget still decides them. The yaw
+term remains unimprovable from these three views, and the aux target made
+it slightly worse in exchange for the position gain.
+
+So this line is close to its ceiling, and the demonstrator's own 99.70% is
+less than a point away. Past that the yaw has to come from somewhere, and
+§4 says it is not in these images at any resolution tried — which makes
+**camera placement, or a wrist view closer to the fingers, the highest-value
+change available**, not more training.
