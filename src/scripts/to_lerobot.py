@@ -92,6 +92,24 @@ def list_episodes(raw_dir):
 AUX_NAMES = ["block_x", "block_y", "block_yaw"]
 AUX_COLUMNS = [0, 1, 3]  # x, y and yaw from the recorded (x, y, z, yaw)
 
+# Named subsets of the above, selectable from the command line.
+#
+# "xy" exists because of a measurement. docs/PATH_TO_99.md S24 establishes
+# that the block's yaw is **not recoverable** from these three camera views:
+# an estimator trained on 6,500 non-leaky samples sits at 22.3 degrees of
+# median error at 160x128 and 21.4 at 320x256, against a chance level of
+# 22.5. Supervising a target that is not in the input does not teach the
+# representation anything; it adds an unlearnable term to the loss that
+# competes with the terms that can be learned.
+#
+# The block's *position* is a different matter, legible to 3.1 mm, and it
+# is the term of the clearance budget that has room in it. So the default
+# stays as it was and "xy" supervises only what the images contain.
+AUX_SETS = {
+    "xyyaw": [0, 1, 3],
+    "xy": [0, 1],
+}
+
 
 def build_features(info, image_shape, aux_dim=0):
     """
@@ -326,12 +344,22 @@ def main():
                         help="one or more raw episode directories to merge")
     parser.add_argument("--repo-id", default=REPO_ID)
     parser.add_argument("--with-block-pose", action="store_true",
-                        help="append the true block x, y and yaw to the "
-                             "action vector as auxiliary training targets")
+                        help="append the true block pose to the action "
+                             "vector as auxiliary training targets")
+    parser.add_argument("--aux", choices=sorted(AUX_SETS), default="xyyaw",
+                        help="which block-pose columns to supervise. "
+                             "xy omits the yaw, which is at chance from "
+                             "these cameras; see docs/PATH_TO_99.md S24")
     parser.add_argument("--exclude-failed", action="store_true",
                         help="skip episodes whose demonstrator did not "
                              "solve the task")
     args = parser.parse_args()
+
+    global AUX_COLUMNS
+    AUX_COLUMNS = AUX_SETS[args.aux]
+    if args.with_block_pose:
+        print(f"auxiliary columns: {args.aux} -> {AUX_COLUMNS} "
+              f"({AUX_NAMES[:len(AUX_COLUMNS)]})")
 
     root = os.path.join(OUT_ROOT, args.repo_id.replace("/", "_"))
     convert(args.raw, args.repo_id, OUT_ROOT,
