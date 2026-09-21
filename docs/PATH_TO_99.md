@@ -1079,3 +1079,78 @@ the student's.
    teacher's 11.94", which is a target a training run can be scored
    against directly, after one evaluation, without waiting for a
    1,200-trial success rate that cannot resolve a point anyway.
+
+---
+
+## S31. The budget across three policies, and what it does not explain
+
+`src/scripts/clearance_report.py` computes the budget from any monitor-mode
+run. Three policies, the same four seeds for the students, 400 trials for
+the demonstrator:
+
+| | strict | jams | grasped then failed | **p5 clearance** | median | min | under 6 mm |
+|---|---|---|---|---|---|---|---|
+| teacher, oracle jitter 1.0 | **99.75%** | **0** | 0 | **11.94 mm** | 14.91 | **+6.40** | **0.00%** |
+| student, 2-policy ensemble | 97.00% | 4 | 1 | 5.08 mm | 12.03 | −8.83 | 6.00% |
+| student, `act_oracle_v2` alone | 92.00% | 4 | 12 | 1.83 mm | 10.22 | −12.87 | 17.50% |
+
+The fifth-percentile clearance orders all three in the same order as their
+success rates, across a range from 92% to 99.75%. That is a good sign for
+using it as a tuning signal, and it is not the whole story.
+
+### What it explains
+
+**The teacher-student gap.** The demonstrator never enters the band under
+6 mm across 400 trials and never jams; both students enter it and both jam
+four times in 200. The threshold was derived from one population and is
+independently respected by a second, unseen one.
+
+### What it does not explain
+
+**The ensemble's advantage over a single policy.** Ensembling raised the p5
+clearance by 3.25 mm, from 1.83 to 5.08, and the jam count did not move:
+**four jams in 200 either way.** The five points ensembling gained came
+almost entirely from somewhere else — trials that grasped the block and
+then failed later fell from **12 to 1**.
+
+So the previous session's account of why ensembling worked, that two
+policies fail in different *regions*, is not contradicted, but the
+mechanism is more specific than the clearance budget: averaging two
+policies' target poses mostly improved what happens **after** the grasp,
+and barely touched the grasp itself.
+
+That also means the two students' residual failures are differently
+composed. `act_oracle_v2` alone fails 16 times in 200, of which 12 are
+post-grasp and 4 are jams. The ensemble fails 6 times, of which 4 are
+jams. **Ensembling removed the post-grasp failures and left the jams
+untouched**, which is exactly why the residual 3% looked like one
+reproducible mode when the previous session went looking for it: by then it
+was one mode, because the other had been eliminated.
+
+### A caution about the band
+
+Entering the band is necessary and not sufficient, and the two students
+disagree about how sufficient:
+
+| | trials under 6 mm | of which jammed |
+|---|---|---|
+| 2-policy ensemble | 12 | 4 (33%) |
+| `act_oracle_v2` alone | 35 | 4 (11%) |
+
+Four jams out of twelve against four out of thirty-five, on counts of four.
+These are not distinguishable at this sample size and the difference should
+not be read as real. What both agree on is the direction: no jam in any run
+has a clearance above 6 mm, and the demonstrator never goes there.
+
+### The consequence for the next run
+
+The metric to score a training run against is the **fifth-percentile
+clearance**, because a success rate cannot resolve a point without
+thousands of trials — S27 watched two clean 1,200-trial measurements of one
+unchanged policy land 1.25 points apart — whereas p5 clearance is a
+continuous quantity measurable on 200 and it spans 1.83 to 11.94 across
+policies whose success rates span 92 to 99.75.
+
+The target is explicit: **raise the ensemble's p5 clearance from 5.08 mm
+toward the demonstrator's 11.94**, and watch the jam count rather than the
+success rate to see whether it helped.
