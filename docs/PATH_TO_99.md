@@ -373,6 +373,13 @@ can touch it.
 
 ## S22. The arm is not mistimed. It is jammed.
 
+> **Two claims in this section do not survive S24.** The jam itself,
+> measured per step, is correct and is the finding the rest of the document
+> builds on. But the lateral offset at descent onset (n=2) does not
+> separate on 200 trials, and the under-rotated wrist is *necessary to* but
+> not *sufficient for* the jam — one of the four jams happens 0.8 degrees
+> from perfect alignment. S25 gives the account that covers all four.
+
 Refusing a close does not unjam an arm, so the veto's zero raised a question
 the failure taxonomy could not answer: when the policy commands a close at
 hover height, is it **asking** for a descent it does not get, or not asking?
@@ -449,6 +456,13 @@ measurement was taken at the wrong instant.
 ---
 
 ## S23. The root cause: a discontinuous regression target at the cube's symmetry boundary
+
+> **This section is wrong and it is kept deliberately.** The mechanism it
+> proposes is refuted in S24 by the same measurement extended from 6
+> failures to 199 trials, and the correct account is in S25. The
+> association it reports between the block's yaw offset and failure is
+> real; the explanation it gives for that association is not. Read S24 and
+> S25 before acting on anything below.
 
 Block x and y do not predict failure. Block **yaw** does, and it does so
 overwhelmingly. Folding the block's initial yaw into its distance from the
