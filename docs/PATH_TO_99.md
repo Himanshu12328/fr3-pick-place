@@ -1210,3 +1210,72 @@ the danger band rises from 6% to 9% and 12%. The two quantities moved
 together across a seed change that nothing else explains, which is a
 modest independent sign that the budget is measuring the thing that
 actually decides these trials.
+
+---
+
+## S33. The run in flight, and a confound caught before it cost four hours
+
+The intervention S28 and S30 point at: **auxiliary supervision of the
+block's position**, aimed at the lateral term of the clearance budget,
+which is the term with room in it. Built and validated in `PATH_TO_97.md`
+S5, listed in "what would be tried next", never run.
+
+### Setup
+
+| | |
+|---|---|
+| data | `data/oracle_v2`, the same 997 oracle episodes `act_oracle_v2` was trained on |
+| aux columns | **block x and y only** |
+| action | 8 dimensions widened to 10 |
+| config | byte-identical to `act_oracle_v2`: chunk 32, `n_action_steps` 32, lr 1e-4, backbone lr 1e-5, batch 64, 30,000 steps |
+| baseline | `act_oracle_v2` @ 30,000, measured this session at 92.00% strict, p5 clearance 1.83 mm, 4 jams in 200 |
+
+The yaw is deliberately **not** supervised. S24 measured it at chance from
+these cameras at both resolutions tried, and a target the input does not
+contain teaches the representation nothing while adding an unlearnable
+term to the loss that competes with the terms that can be learned.
+
+### The confound, and it was nearly paid for
+
+The first conversion produced **1,000** episodes. The baseline's dataset has
+**997**. The difference is episodes 0543, 0671 and 0991, the three where
+the demonstrator itself failed, which `--exclude-failed` drops and which
+the baseline conversion had dropped.
+
+Three episodes in a thousand is 0.3%, and it would have been easy to wave
+through. It is not 0.3% of the frames: a failed demonstration runs to the
+600-step cap, so those three contribute 1,800 frames, and every one of them
+teaches the arm to do something that did not work.
+
+Had the run gone ahead, an aux model that underperformed would have had two
+explanations and no way to separate them. `PATH_TO_97.md` S13 already
+records what that costs — "DAgger fine-tuning made it much worse, and the
+experiment was confounded" — so the conversion was thrown away and redone
+with `--exclude-failed`. Ninety minutes against four hours of an
+uninterpretable result.
+
+The dataset now has 997 episodes and the **only** difference from the
+baseline's is the two extra action columns.
+
+### Predictions, written before the run
+
+1. **The aux target raises the p5 clearance.** The mechanism is direct:
+   position is legible to 3.1 mm and the aux target forces the
+   representation to carry it. Predicted p5 from 1.83 mm to somewhere in
+   3 to 6 mm, which is the ensemble's current range from a single policy.
+2. **The jam count falls by less than the clearance suggests.** The
+   clearance budget has two terms and this improves one. The yaw term is
+   untouched and cannot be improved from these cameras. Predicted 4 jams in
+   200 to 2 or 3, not to 0.
+3. **The strict rate moves by about a point and will not be measurable as
+   such.** From 92.00% to somewhere near 93%, which needs far more than 200
+   trials to separate. This is exactly why p5 clearance is the metric being
+   watched.
+4. **It will not reach the demonstrator's 11.94 mm.** The demonstrator has
+   zero yaw error by construction; the student cannot, because the
+   information is not in its images.
+
+If prediction 1 fails — if the p5 clearance does not move — then the
+lateral error is not a representation problem either, and the budget's
+remaining explanation is the yaw term alone, which would make camera
+placement the only lever left in the project.
