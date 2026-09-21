@@ -62,19 +62,38 @@ MODES = {
 }
 
 
-def build_policy(members, mode, device="cuda", **kwargs):
+def build_policy(members, mode, device="cuda", oracle=False, jitter=1.0,
+                 **kwargs):
     """
     Loads the members, ensembles them if there is more than one, and wraps
     the result in the supervisor.
 
+    The oracle is wrapped by the same supervisor for one reason: it scores
+    99.7% strict against the student's 96.4%, and the instrumentation that
+    measured the student's clearance budget can measure the demonstrator's
+    on the same terms. If the teacher's clearances are much larger, the
+    budget is the whole account of the gap. If they are similar, something
+    else separates them and the budget is not where to look.
+
     input:  members (list of str) checkpoint paths, mode (str) one of MODES,
-            device (str), kwargs passed to SupervisedPolicy
+            device (str), oracle (bool) score the demonstrator instead,
+            jitter (float) oracle jitter, kwargs passed to SupervisedPolicy
     output: (policy callable, name str)
     """
     from src.eval.ensemble import EnsemblePolicy
     from src.eval.policy_wrapper import LeRobotPolicyAdapter, load_policy_and_processors
     from src.eval.strict import use_checkpoint_render_size
     from src.eval.supervisor import SupervisedPolicy
+
+    flags = MODES[mode]
+
+    if oracle:
+        from src.eval.oracle import ScriptedOracle
+
+        inner = ScriptedOracle(jitter=jitter, seed=0)
+        policy = SupervisedPolicy(inner, veto=flags["veto"],
+                                  retry=flags["retry"], **kwargs)
+        return policy, f"oracle(jitter={jitter})+{mode}"
 
     adapters = []
     for path in members:
@@ -88,7 +107,6 @@ def build_policy(members, mode, device="cuda", **kwargs):
         adapters.append(LeRobotPolicyAdapter(pol, pre, post, device=device))
 
     inner = adapters[0] if len(adapters) == 1 else EnsemblePolicy(adapters)
-    flags = MODES[mode]
     policy = SupervisedPolicy(inner, veto=flags["veto"], retry=flags["retry"],
                               **kwargs)
     name = f"{'ensemble' if len(adapters) > 1 else Path(members[0]).parts[-3]}+{mode}"
@@ -96,7 +114,7 @@ def build_policy(members, mode, device="cuda", **kwargs):
 
 
 def run_seed(members, mode, seed, trials, max_steps, device, video_dir,
-             video_n, thresholds):
+             video_n, thresholds, oracle=False, jitter=1.0):
     """
     Evaluates one seed in this process, in trial order.
 
@@ -107,12 +125,13 @@ def run_seed(members, mode, seed, trials, max_steps, device, video_dir,
     """
     from src.eval.strict import evaluate_strict
 
-    policy, _ = build_policy(members, mode, device=device, **thresholds)
+    policy, _ = build_policy(members, mode, device=device, oracle=oracle,
+                             jitter=jitter, **thresholds)
     _, rows = evaluate_strict(
         policy,
         n_trials=trials,
         seed=seed,
-        need_images=True,
+        need_images=not oracle,
         verbose=False,
         video_dir=video_dir,
         video_n=video_n,
@@ -316,6 +335,10 @@ def main():
     p.add_argument("--finger-hold-min-mm", type=float, default=24.0)
     p.add_argument("--settle-wait", type=int, default=12)
     p.add_argument("--max-recoveries", type=int, default=3)
+    p.add_argument("--oracle", action="store_true",
+                   help="score the scripted demonstrator instead of a "
+                        "checkpoint, with the same instrumentation")
+    p.add_argument("--jitter", type=float, default=1.0)
     p.add_argument("--worker-seed", type=int, default=None)
     p.add_argument("--worker-out", default=None)
     args = p.parse_args()
@@ -332,7 +355,7 @@ def main():
         rows = run_seed(
             args.members, args.mode, args.worker_seed, args.trials,
             args.max_steps, args.device, args.video_dir, args.video_n,
-            thresholds,
+            thresholds, oracle=args.oracle, jitter=args.jitter,
         )
         Path(args.worker_out).write_text(
             json.dumps(rows, default=float), encoding="utf-8"
@@ -345,18 +368,19 @@ def main():
 
     if args.workers > 1 and len(args.seeds) > 1:
         rows = spawn_workers(args, thresholds)
-        name = f"ensemble+{args.mode}"
+        name = f"{'oracle' if args.oracle else 'ensemble'}+{args.mode}"
     else:
         rows = []
         for seed in args.seeds:
             rows += run_seed(
                 args.members, args.mode, seed, args.trials, args.max_steps,
                 args.device, args.video_dir, args.video_n, thresholds,
+                oracle=args.oracle, jitter=args.jitter,
             )
             print(f"  seed {seed} done: "
                   f"{sum(r['strict_success'] for r in rows[-args.trials:])}"
                   f"/{args.trials} strict", flush=True)
-        name = f"ensemble+{args.mode}"
+        name = f"{'oracle' if args.oracle else 'ensemble'}+{args.mode}"
 
     summary = report(rows, name, args.seeds)
     summary["elapsed_s"] = time.time() - t0

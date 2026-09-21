@@ -998,3 +998,70 @@ Regenerate with:
 python -m src.scripts.eval_supervised --mode monitor --seeds 92 --trials 12 `
   --video-dir logs/videos_jam --video-n 12 --max-steps 900 --tag videos_jam
 ```
+
+---
+
+## S30. The teacher's clearance budget, which closes the account
+
+S28 named this as the measurement to make before any of the three proposed
+next steps, because it decides whether the clearance budget is the whole
+story or only part of it. It is cheap: the oracle needs no images, so 400
+trials run on the CPU without touching the GPU.
+
+The scripted oracle, jitter 1.0, through the same harness with the same
+instrumentation: **99.75% strict, one failure in 400**, consistent with the
+99.7% over 1,000 in S18.
+
+| at descent onset | **teacher**, n=400 | **student**, n=200 |
+|---|---|---|
+| clearance, **minimum** | **+6.40 mm** | **−8.83 mm** |
+| clearance, p1 | 10.17 mm | −3.00 mm |
+| clearance, p5 | 11.94 mm | 5.08 mm |
+| clearance, median | 14.91 mm | 12.03 mm |
+| **trials under 6 mm** | **0 of 400 (0.00%)** | **12 of 200 (6.00%)** |
+| jams | **0** | 4 |
+
+**The teacher's worst trial in 400 has more clearance than the student's
+fifth percentile.** It never once enters the band under 6 mm where every
+student jam occurs, and it never jams.
+
+That is the account of the gap between 99.7% and 96.4%, and it is entirely
+a statement about a distribution's tail rather than its centre. The median
+clearances differ by only 2.88 mm. What differs is the worst case:
+
+| | teacher | student |
+|---|---|---|
+| lateral offset, median | 3.09 mm | 5.21 mm |
+| lateral offset, **max** | **11.60 mm** | **21.37 mm** |
+| commanded yaw error, median | **0.00 deg** | 2.14 deg |
+| commanded yaw error, **max** | **0.00 deg** | **33.05 deg** |
+
+The oracle's yaw error is zero at every percentile, which is what a
+demonstrator that computes the alignment from the block's pose looks like
+and confirms the label audit in S23 from the other direction. Its lateral
+offset is not zero — it is jittered deliberately — but its worst is half
+the student's.
+
+### What this settles
+
+1. **The clearance budget is the whole story.** No third mechanism is
+   needed to explain why the teacher is at 99.7% and the student at 96.4%.
+   The teacher stays out of the danger band; the student enters it on 6% of
+   trials and jams on a third of those.
+2. **The 6 mm threshold is not fitted to the student.** It was derived from
+   4 jams against 194 passes, and the teacher independently never goes
+   below 6.40 mm across 400 trials and never jams. A threshold that
+   separates in one population and is respected by a second, unseen one is
+   doing better than curve-fitting.
+3. **Both terms have to improve, and only one of them can.** The student's
+   lateral maximum is 9.8 mm worse than the teacher's and its yaw maximum
+   is 33 degrees worse. The lateral term is learnable — position is legible
+   to 3.1 mm. The yaw term is not, from these three views, at either
+   resolution tested. So an auxiliary position target is the right next
+   run, and it is not sufficient on its own.
+4. **This is the number to beat.** Not 99.99%, and not the teacher's
+   99.7% either, until the yaw term has somewhere to come from. It is
+   "raise the student's 5th-percentile clearance from 5.08 mm toward the
+   teacher's 11.94", which is a target a training run can be scored
+   against directly, after one evaluation, without waiting for a
+   1,200-trial success rate that cannot resolve a point anyway.
