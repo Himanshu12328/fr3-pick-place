@@ -1154,3 +1154,59 @@ policies whose success rates span 92 to 99.75.
 The target is explicit: **raise the ensemble's p5 clearance from 5.08 mm
 toward the demonstrator's 11.94**, and watch the jam count rather than the
 success rate to see whether it helped.
+
+---
+
+## S32. How well the clearance budget tracks the success rate
+
+Five monitor-mode runs, 2,000 trials in total, spanning success rates from
+92% to 99.75%:
+
+| run | strict | n | **p5 clearance** | median | jam rate | under 6 mm |
+|---|---|---|---|---|---|---|
+| teacher, oracle jitter 1.0 | 99.75% | 400 | **11.94 mm** | 14.91 | 0.00% | 0.00% |
+| ensemble x2, seeds 61-92 | 97.00% | 200 | 5.08 mm | 12.03 | 2.00% | 6.00% |
+| ensemble x2, seeds 111-116 | 96.17% | 600 | 3.91 mm | 11.44 | 1.00% | 12.00% |
+| ensemble x2, seeds 101-106 | 95.33% | 600 | 3.99 mm | 11.91 | 1.67% | 9.00% |
+| `act_oracle_v2` alone | 92.00% | 200 | 1.83 mm | 10.22 | 2.00% | 17.50% |
+
+| | |
+|---|---|
+| Pearson r, p5 clearance vs strict rate | **+0.90** |
+| Pearson r, p5 clearance vs jam rate | **−0.86** |
+| Spearman, p5 vs strict | +0.90 |
+
+### What that supports, and what it does not
+
+It supports using p5 clearance as the signal a training run is scored on
+**instead of** a success rate, for changes of the size a retrain produces.
+The range is wide — 1.83 to 11.94 mm across policies spanning eight points
+of success — so a real improvement should be unmistakable.
+
+Two honest limits.
+
+**The teacher carries most of the correlation.** It is far outside the
+students' range in both variables, and a correlation computed across four
+students alone is weaker, Spearman 0.8 on four points. Five runs is five
+runs.
+
+**It does not resolve differences under about a point.** The two fresh
+600-trial seed sets differ by 0.84 points of success rate — 96.17% against
+95.33% — and p5 clearance orders them the *wrong way round*, 3.91 mm
+against 3.99. An 0.08 mm difference in a fifth percentile estimated from
+600 trials is noise, and so is an 0.84-point difference in a success rate
+from the same trials. Neither metric can see a difference that small, which
+is consistent with S27 rather than a strike against the budget.
+
+So: use it to tell whether a retrain moved the thing the failures depend
+on, and do not use it to rank two policies that are already close.
+
+### And one consistency check worth noting
+
+The fresh seed sets are harder than the screening seeds by both measures at
+once. Success falls from 97.00% to 95.33% and 96.17%, and p5 clearance
+falls from 5.08 mm to 3.99 and 3.91, while the fraction of trials entering
+the danger band rises from 6% to 9% and 12%. The two quantities moved
+together across a seed change that nothing else explains, which is a
+modest independent sign that the budget is measuring the thing that
+actually decides these trials.
