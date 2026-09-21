@@ -162,14 +162,69 @@ and yaw is at chance at both resolutions tested.
   resolves in **one** step; an air close is still travelling at 8. The two
   populations first separate cleanly at 12.
 
+## 5. The budget accounts for the whole gap to the demonstrator
+
+Running the oracle through the same instrumentation — it needs no images,
+so 400 trials cost nothing:
+
+| at descent onset | **teacher**, n=400 | **student**, n=200 |
+|---|---|---|
+| clearance, **minimum** | **+6.40 mm** | **−8.83 mm** |
+| clearance, p5 | 11.94 mm | 5.08 mm |
+| clearance, median | 14.91 mm | 12.03 mm |
+| **trials under 6 mm** | **0 (0.00%)** | **12 (6.00%)** |
+| jams | **0** | 4 |
+| lateral offset, median / max | 3.09 / 11.60 mm | 5.21 / **21.37** mm |
+| commanded yaw error, median / max | **0.00 / 0.00°** | 2.14 / **33.05°** |
+
+The teacher's **worst trial in 400 has more clearance than the student's
+fifth percentile**, and it never enters the band where every student jam
+happens. This also validates the 6 mm threshold rather than fitting it: it
+came from 4 jams against 194 passes in one population, and a second,
+unseen population independently never goes below 6.40 mm and never jams.
+
+**What the budget does not explain** is the ensemble's advantage over a
+single policy. Ensembling lifted p5 clearance by 3.25 mm and the jam count
+did not move — **4 jams in 200 either way**. Its five points came from
+trials that grasped and then failed later, which fell from **12 to 1**. So
+ensembling removed the post-grasp failures and left the jams untouched,
+which is why the residual presented as one clean mode when the previous
+session went looking for it: by then it *was* one mode.
+
+## 6. A tuning signal to replace the one that does not work
+
+Across five runs and 2,000 trials, spanning 92% to 99.75%:
+
+| | Pearson r |
+|---|---|
+| p5 clearance vs strict rate | **+0.90** |
+| p5 clearance vs jam rate | **−0.86** |
+
+Reported with its limits: the teacher sits far outside the students' range
+and carries most of the correlation (across four students alone it is
+Spearman 0.8 on four points), and it **cannot resolve differences under
+about a point** — the two fresh 600-trial seed sets differ by 0.84 points
+of success and p5 orders them the wrong way round, 3.91 mm against 3.99.
+
+That is still better than the alternative. A success rate needs thousands
+of trials to resolve a point (§2), whereas p5 clearance is continuous,
+measurable on 200 trials, and spans an order of magnitude across policies
+eight points apart. `src/scripts/clearance_report.py` computes it from any
+monitor-mode run.
+
 ## What the evidence points at next
 
 The **lateral** term is the one with room in it — position is legible to
-3.1 mm against a p5 clearance of 7 mm. The auxiliary block-position target
-built and validated in `PATH_TO_97.md` S5 and never used aims exactly
-there, and `to_lerobot.py` gains an `--aux xy` option that supervises
-position only, omitting the yaw that the images do not contain.
+3.1 mm against a p5 clearance of 5.08 mm. The auxiliary block-position
+target built and validated in `PATH_TO_97.md` S5 and never used aims
+exactly there, and `to_lerobot.py` gains an `--aux xy` option that
+supervises position only, omitting the yaw the images do not contain.
 
 The **yaw** term cannot be improved from these three views. This is the
 first evidence in the project pointing at camera placement rather than at
 the policy.
+
+The target is explicit and does not need a 1,200-trial run to read:
+**raise the student's fifth-percentile clearance from 5.08 mm toward the
+demonstrator's 11.94**, and watch the jam count rather than the success
+rate to see whether it helped.
