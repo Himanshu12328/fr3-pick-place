@@ -54,6 +54,10 @@ class EnsemblePolicy:
         self.policies = policies
         self.grip_threshold = grip_threshold
         self.last_grip = 0.04
+        # The members' individual outputs from the most recent call, kept so
+        # a diagnostic can ask what they disagreed about without calling
+        # them again and advancing their action queues twice.
+        self.last_member_actions = None
 
     def reset(self):
         """
@@ -91,6 +95,7 @@ class EnsemblePolicy:
         """
         actions = np.stack([np.asarray(p(obs), dtype=np.float64)
                             for p in self.policies])
+        self.last_member_actions = actions
 
         pos = actions[:, :3].mean(axis=0)
 
