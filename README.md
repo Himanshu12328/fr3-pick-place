@@ -204,9 +204,37 @@ This rules out a class of fixes rather than suggesting one.
   level of 22.5°. `PATH_TO_97.md` S3 ruled resolution out on *position*
   evidence, and position is legible to 3.1 mm; yaw had never been measured.
 
-So the lateral term is the one with room in it, and the auxiliary
-block-position target built and validated in `PATH_TO_97.md` S5 and never
-used is aimed exactly at it. That is the next run this evidence supports.
+#### The budget accounts for the whole gap to the teacher
+
+The demonstrator scores 99.7% and the student 96.4%. Running the oracle
+through the same instrumentation — it needs no images, so 400 trials cost
+nothing — shows the difference is a distribution's **tail**, not its centre:
+
+| at descent onset | **teacher**, n=400 | **student**, n=200 |
+|---|---|---|
+| clearance, **minimum** | **+6.40 mm** | **−8.83 mm** |
+| clearance, p5 | 11.94 mm | 5.08 mm |
+| clearance, median | 14.91 mm | 12.03 mm |
+| **trials under 6 mm** | **0 (0.00%)** | **12 (6.00%)** |
+| jams | **0** | 4 |
+| lateral offset, median / max | 3.09 / 11.60 mm | 5.21 / **21.37** mm |
+| commanded yaw error, median / max | **0.00 / 0.00°** | 2.14 / **33.05°** |
+
+The teacher's worst trial in 400 has more clearance than the student's
+fifth percentile, and it never enters the band where every student jam
+happens. The median clearances differ by only 2.88 mm.
+
+This also validates the 6 mm threshold rather than fitting it: it was
+derived from 4 jams against 194 passes in one population, and a second,
+unseen population independently never goes below 6.40 mm and never jams.
+
+So the lateral term is the one with room in it — position is legible to
+3.1 mm — and the auxiliary block-position target built and validated in
+`PATH_TO_97.md` S5 and never used is aimed exactly at it. That is the next
+run this evidence supports, and it gives a target a single training run can
+be scored against without waiting on a 1,200-trial success rate that cannot
+resolve a point: **raise the student's fifth-percentile clearance from
+5.08 mm toward the teacher's 11.94.**
 
 A 20-trial sample on a different held-out seed is in
 [docs/proof_ensemble_20trials.png](docs/proof_ensemble_20trials.png).
