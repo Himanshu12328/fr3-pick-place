@@ -17,7 +17,7 @@ import json
 import numpy as np
 
 from src.config import LOG_DIR
-from src.eval.strict import GATES, evaluate_strict, format_report
+from src.eval.strict import evaluate_strict, format_report
 
 
 def build_policy(args):
