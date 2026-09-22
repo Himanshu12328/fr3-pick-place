@@ -47,5 +47,24 @@ target-version = "py311"
 select = ["E", "F", "I", "UP", "B"]
 ignore = ["E501"]
 
+[tool.ruff.lint.isort]
+# Pin `src` as first-party instead of letting ruff infer it.
+#
+# Ruff's inference is environment-sensitive here in a way I could not fully
+# explain. On this working copy `ruff check src tests` passes; on a clean
+# clone of the same commit, with the same pinned ruff 0.16.4, it reports 15
+# I001 errors and wants `from src.data.task import ...` moved up into the
+# third-party block beside `mujoco` and `numpy`. That is the wrong answer --
+# `src.data.task` is this project's own code -- and it is also not stable,
+# which is worse: CI failed on errors a local run had just passed.
+#
+# Ruling things out: it is not the ruff version (0.16.4 both sides), not the
+# lint cache (`--no-cache` reproduces), not CRLF against LF, not a
+# root-level `data/` directory, and not the egg-info `top_level.txt`.
+#
+# Saying it explicitly makes the classification the same everywhere, and
+# keeps the import blocks semantically honest.
+known-first-party = ["src"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
