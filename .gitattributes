@@ -1,15 +1,17 @@
-# Normalise every text file to LF in the working tree, not just in the
+# Normalise text files to LF in the working tree, not just in the
 # repository.
 #
-# Without this, git's autocrlf checks out CRLF on Windows while storing LF,
-# so the files ruff lints locally are not the files ruff lints in CI. That
-# is not a theoretical difference: ruff 0.16.4's import-sorting rule (I001)
-# reports errors on the LF content that it does not report on the identical
-# CRLF content. CI failed on 15 errors that `ruff check src tests` had just
-# passed locally, on the same pinned ruff version and the same commit.
+# git's autocrlf otherwise checks out CRLF on Windows while storing LF, so
+# every commit prints a "LF will be replaced by CRLF" warning and any tool
+# that hashes or diffs file bytes sees something different locally than CI
+# does. Keeping the working tree at LF removes a whole class of "it passes
+# here and fails there" without costing anything on Windows, where every
+# editor in use handles LF.
 #
-# With eol=lf the working tree matches the repository, and therefore matches
-# CI, so a local check means something.
+# This was added while chasing a lint result that differed between this
+# machine and CI. Line endings turned out **not** to be the cause — the
+# cause was `.gitignore` swallowing `src/data/` — but matching the
+# repository in the working tree is worth doing on its own.
 * text=auto eol=lf
 
 # Binary, never touched.
