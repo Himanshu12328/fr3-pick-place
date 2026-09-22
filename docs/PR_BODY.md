@@ -88,7 +88,7 @@ yaw error `e` presents `22(cos e + sin e)` of half-extent.
 Eleven trials in 200 sit under 6 mm and four of them jam: **36% against a
 2% base rate**, against a median clearance of 12 mm.
 
-![the residual failure](docs/yaw_jam.png)
+![the residual failure](https://raw.githubusercontent.com/Himanshu12328/fr3-pick-place/0b06aa91d467f438eafc4a9dda71887c0b20538b/docs/yaw_jam.png)
 
 **Two terms that trade off**, which is why four separate single-variable
 explanations each looked right on a handful of trials and each failed at
