@@ -54,6 +54,10 @@ class EnsemblePolicy:
         self.policies = policies
         self.grip_threshold = grip_threshold
         self.last_grip = 0.04
+        # The members' individual outputs from the most recent call, kept so
+        # a diagnostic can ask what they disagreed about without calling
+        # them again and advancing their action queues twice.
+        self.last_member_actions = None
 
     def reset(self):
         """
@@ -89,8 +93,24 @@ class EnsemblePolicy:
         input:  obs (dict) harness observation
         output: numpy array of shape (8,)
         """
-        actions = np.stack([np.asarray(p(obs), dtype=np.float64)
+        # Truncate to the eight dimensions that are the action.
+        #
+        # A policy trained with auxiliary supervision emits a wider vector:
+        # `to_lerobot --with-block-pose` appends the block's pose to the
+        # action so that ACT regresses it alongside the task, and the
+        # rollout harness reads action[:3], action[3:7] and action[7] and
+        # ignores the rest. Ensembling such a policy with a plain one is a
+        # legitimate and useful configuration — measured, they fail on
+        # disjoint trials — but np.stack refuses to combine an 8-vector
+        # with a 10-vector, and the failure is a ValueError several frames
+        # deep rather than anything that names the cause.
+        #
+        # The auxiliary columns are a training target and never an action,
+        # so dropping them here is not a compromise; it is what the harness
+        # does with them anyway.
+        actions = np.stack([np.asarray(p(obs), dtype=np.float64)[:8]
                             for p in self.policies])
+        self.last_member_actions = actions
 
         pos = actions[:, :3].mean(axis=0)
 

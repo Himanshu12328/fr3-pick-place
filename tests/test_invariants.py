@@ -43,31 +43,64 @@ def function_source(module_path, func_name):
     return None
 
 
+def literal_or_config_value(node):
+    """
+    Evaluates an assignment's right-hand side, resolving bare names against
+    config rather than giving up on them.
+
+    This exists because of a test that was not testing anything.
+    `test_eval_resolution_matches_training_resolution` guards the most
+    expensive defect in this project's history: rendering at 640x480 for a
+    policy trained at 160x128 applies crop_shape in pixels, turns a
+    whole-scene view into a small centre patch, and drops measured success
+    from 60% to 0.4% with nothing raised anywhere.
+
+    `rollout.py` assigns `CAM_WIDTH, CAM_HEIGHT = TRAIN_WIDTH, TRAIN_HEIGHT`.
+    The tuple form was handled, but the right-hand side is two *names*, not
+    two literals, so `ast.literal_eval` raised and the helper returned None.
+    The guard then compared None against 160 and failed — and with CI
+    disabled since "chore: disable CI", nothing reported it. A broken guard
+    is worse than no guard, because the absence of a complaint reads as a
+    pass.
+
+    input:  node (ast.AST) the value side of an assignment
+    output: the value, or None if it cannot be resolved
+    """
+    try:
+        return ast.literal_eval(node)
+    except (ValueError, TypeError, SyntaxError):
+        pass
+
+    if isinstance(node, ast.Name):
+        return getattr(config, node.id, None)
+
+    if isinstance(node, ast.Tuple):
+        return tuple(literal_or_config_value(e) for e in node.elts)
+
+    return None
+
+
 def module_constant(module_path, name):
     """
     Reads a module-level constant assignment without importing the module.
 
     input:  module_path (Path), name (str)
-    output: the literal value, or None if not found or not a literal
+    output: the value, or None if not found or not resolvable
     """
     tree = ast.parse(module_path.read_text(encoding="utf-8"))
     for node in tree.body:
         if isinstance(node, ast.Assign):
             for target in node.targets:
                 if isinstance(target, ast.Name) and target.id == name:
-                    try:
-                        return ast.literal_eval(node.value)
-                    except ValueError:
-                        return None
+                    return literal_or_config_value(node.value)
                 # Handles tuple assignment such as A, B = 1, 2
                 if isinstance(target, ast.Tuple):
                     names = [e.id for e in target.elts if isinstance(e, ast.Name)]
                     if name in names:
-                        try:
-                            values = ast.literal_eval(node.value)
+                        values = literal_or_config_value(node.value)
+                        if isinstance(values, (tuple, list)):
                             return values[names.index(name)]
-                        except ValueError:
-                            return None
+                        return None
     return None
 
 
@@ -284,3 +317,97 @@ def test_no_sys_path_manipulation():
             offenders.append(str(path.relative_to(SRC)))
 
     assert not offenders, f"sys.path manipulation in: {', '.join(offenders)}"
+
+
+def test_supervisor_only_ever_writes_the_gripper_channel():
+    """
+    The runtime supervisor may withhold a gripper close and it may flush the
+    policy's action chunk. It may not issue motion.
+
+    That constraint is the whole basis on which the supervised result is
+    still a statement about a learned policy rather than about a
+    hand-written state machine with a policy attached, and a docstring
+    promising it is worth nothing once somebody needs the arm to back off
+    by two centimetres and it is one line to do it. So it is checked
+    mechanically: every subscripted assignment to the action vector in
+    supervisor.py must target index 7, the gripper.
+
+    action = target_pos[0:3], target_quat[3:7], gripper[7]
+    """
+    path = SRC / "eval" / "supervisor.py"
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+
+    writes = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Assign):
+            continue
+        for target in node.targets:
+            if not isinstance(target, ast.Subscript):
+                continue
+            if not (isinstance(target.value, ast.Name)
+                    and target.value.id == "action"):
+                continue
+            writes.append(ast.unparse(target))
+
+    assert writes, "no assignment to the action vector found; has it been renamed?"
+    for w in writes:
+        assert w == "action[7]", (
+            f"supervisor.py assigns to {w}. Only action[7], the gripper, may "
+            "be written: every target pose the arm is driven to has to be the "
+            "policy's own output."
+        )
+
+
+def test_supervisor_thresholds_separate_the_measured_populations():
+    """
+    The veto and detector thresholds sit between two populations measured
+    over 200 monitor-mode trials, and the gaps are wide but not infinite.
+    Nudging a constant to "be safer" in one direction walks it into the
+    other population, and the symptom is not an error: it is a policy that
+    refuses grasps that would have worked, or accepts closes on air.
+
+    Measured, at the first close:
+
+        passed strict (n=194)   height -3.27 to +1.55 mm
+                                finger settle 29.90 to 33.94 mm
+        closed on air (n=4)     height +20.74 to +30.71 mm
+                                finger settle 15.35 to 19.11 mm
+    """
+    path = SRC / "eval" / "supervisor.py"
+
+    grasp_max = module_constant(path, "GRASP_MAX_ABOVE_M")
+    finger_min = module_constant(path, "FINGER_HOLD_MIN_M")
+    stall = module_constant(path, "STALL_STEPS")
+
+    assert 0.00155 < grasp_max < 0.02074, (
+        f"GRASP_MAX_ABOVE_M={grasp_max} is outside the measured gap. Above "
+        "+1.55 mm or it refuses grasps that worked; below +20.74 mm or it "
+        "admits the air closes it exists to stop."
+    )
+    assert 0.01911 < finger_min < 0.02990, (
+        f"FINGER_HOLD_MIN_M={finger_min} is outside the measured gap between "
+        "air closes (max 19.11 mm) and real grasps (min 29.90 mm)."
+    )
+    # Every one of the 194 passing trials had closed by step 125.
+    assert stall > 125, (
+        f"STALL_STEPS={stall} would flush the plan of a grasp that was still "
+        "going to succeed; the latest observed passing grasp was step 125."
+    )
+
+
+def test_recovery_allowance_is_one_measured_approach():
+    """
+    The episode-length band is widened per recovery, and the widening is a
+    measured phase duration rather than a number chosen to make a result
+    pass. It must equal the demonstrations' mean approach, because that is
+    what a recovery repeats.
+    """
+    strict = SRC / "eval" / "strict.py"
+    allowance = module_constant(strict, "RECOVERY_ALLOWANCE_STEPS")
+
+    from src.rl import reference as REF
+
+    assert allowance == int(REF.APPROACH_STEPS[0]), (
+        f"RECOVERY_ALLOWANCE_STEPS={allowance} no longer equals the measured "
+        f"mean approach of {int(REF.APPROACH_STEPS[0])} steps."
+    )

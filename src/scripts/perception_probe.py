@@ -104,7 +104,7 @@ class BlockRegressor(nn.Module):
         input:  images (list of tensors, each B,3,H,W)
         output: tensor B,2
         """
-        feats = [t(x) for t, x in zip(self.trunks, images)]
+        feats = [t(x) for t, x in zip(self.trunks, images, strict=True)]
         return self.head(torch.cat(feats, dim=1))
 
 
@@ -271,7 +271,7 @@ def main():
         # auxiliary supervision will touch them.
         by_bin = {}
         xs = tgt[te][:, 0]
-        for lo, hi in zip(BINS[:-1], BINS[1:]):
+        for lo, hi in zip(BINS[:-1], BINS[1:], strict=True):
             mask = (xs >= lo) & (xs < hi)
             if mask.sum():
                 by_bin[f"{lo:.3f}-{hi:.3f}"] = {

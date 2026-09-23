@@ -100,17 +100,36 @@ def phases(gripper):
     return grasp, release
 
 
-def describe(targets, gripper):
+def describe(targets, gripper, grasp=None, release=None):
     """
     Reduces one episode to the quantities the demonstration profile is
     written in.
 
+    `phases` takes the first close and the first open after it, which is
+    right for a demonstration and wrong for an episode that closed on
+    nothing, reopened and grasped properly on the second attempt. On such an
+    episode the first close is the failed attempt, so `carry` measures the
+    handful of steps before the fingers reopened and `retreat` measures
+    everything from there to the end. The shape score then collapses, and it
+    collapses for the wrong reason: it reports the recovery as a malformed
+    trajectory rather than scoring the trajectory that actually carried the
+    block.
+
+    `strict.evaluate_trace` already computes the phase frames the robust
+    way, from the last moment the block was genuinely in a closed gripper,
+    precisely because seven of its nine gates had the same problem. Passing
+    them in lets one definition serve both. Left at None the behaviour is
+    unchanged, so every number this module has ever reported still holds.
+
     input:  targets (array (T,3)) commanded target position per step,
-            gripper (array (T,)) commanded finger width per step
+            gripper (array (T,)) commanded finger width per step,
+            grasp (int or None) grasp frame, defaults to the first close,
+            release (int or None) release frame, defaults to the first open
     output: dict of measurements, or None if the episode never grasped
     """
     targets = np.asarray(targets, dtype=float)
-    grasp, release = phases(gripper)
+    if grasp is None:
+        grasp, release = phases(gripper)
     if grasp is None:
         return None
 

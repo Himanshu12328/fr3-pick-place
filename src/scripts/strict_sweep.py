@@ -28,12 +28,12 @@ Run:
 import argparse
 import json
 import re
-from pathlib import Path
-
-import numpy as np
 
 from src.config import LOG_DIR, OUTPUT_ROOT
-from src.eval.strict import GATES, evaluate_strict, summarise, use_checkpoint_render_size
+from src.eval.strict import (
+    evaluate_strict,
+    use_checkpoint_render_size,
+)
 
 
 def checkpoint_steps(run_dir):

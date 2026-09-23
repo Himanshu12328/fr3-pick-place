@@ -1796,3 +1796,93 @@ would be tried next" and neither was run.
 Mean lift 79 mm against the demonstrations' 80. Trajectory score 0.955
 against the oracle's 0.991. Block moves 0.14 mm after release. Regional
 split 95.2% near and 97.3% far.
+
+---
+
+## S17. What the remaining failures actually are
+
+Three of 100 trials failed on held-out seed 92. All three are recorded by
+the gates as "the block never rose past 20 mm", which the earlier failure
+taxonomy called a grasp that never happened. That description is correct and
+tells you nothing about the mechanism, and several different mechanisms
+produce it: closing on empty air, closing correctly and having the block
+slip, knocking the block away during the approach, or never attempting a
+close at all.
+
+`src/scripts/diagnose_failures.py` replays specific trials and records what
+the normal trace does not: the measured finger width after closing, the
+tool-to-block offset at the moment of closing, and the wrist-to-block yaw
+misalignment. Block placements come from the same generator in the same
+order, so any trial index can be reproduced without running the ones before
+it.
+
+### The moment the fingers close
+
+| trial | lateral | height above block centre | yaw | fingers settle | lift | |
+|---|---|---|---|---|---|---|
+| 0 | 4.2 mm | **−2.2 mm** | 2.6° | 30.4 mm | 81.4 mm | passed |
+| 1 | 7.7 mm | −1.2 mm | 2.1° | 30.2 mm | 79.9 mm | passed |
+| 2 | 5.7 mm | −1.4 mm | 2.3° | 30.4 mm | 76.8 mm | passed |
+| 3 | 6.3 mm | −0.6 mm | 3.9° | 30.8 mm | 80.0 mm | passed |
+| 4 | 3.6 mm | −2.4 mm | 0.2° | 29.9 mm | 82.7 mm | passed |
+| **11** | 16.8 mm | **+21.6 mm** | 12.1° | 18.2 mm | 6.4 mm | **failed** |
+| **21** | 12.2 mm | **+21.5 mm** | 18.1° | 9.3 mm | 19.7 mm | **failed** |
+| **96** | 10.8 mm | **+21.7 mm** | 8.2° | 8.4 mm | 9.0 mm | **failed** |
+
+| | passed | failed |
+|---|---|---|
+| lateral offset | 5.5 mm | 13.3 mm |
+| height above block centre | **−1.6 mm** | **+21.6 mm** |
+| yaw misalignment | 2.2° | 12.8° |
+
+### The answer
+
+**It is not that the gripper could not pick the block up.** The gripper
+closed in the wrong place.
+
+The block's half-height is 22.0 mm. A successful grasp closes with the tool
+1 to 2 mm *below* the block's centre, so the fingers straddle it and settle
+at about 30 mm — the width of the block between them. All three failures
+closed at **+21.6 mm**, which is exactly level with the **top face**. The
+fingers came together above the block, caught its top edge or nothing at
+all, and settled at 8 to 18 mm. The block was shoved 3 to 12 mm sideways in
+the process.
+
+The consistency is the striking part: +21.6, +21.5, +21.7 mm. That is not
+scatter, it is a single reproducible mode. **The policy skipped the descent
+and closed at hover height.** Lateral offset and yaw were also unconverged
+at that moment — 2.4× and 6× worse than a successful grasp — which is what
+being at the wrong point in the trajectory looks like.
+
+So the residual failure is a **timing failure, not a perception failure or a
+hardware limit**, which is consistent with the perception probe locating the
+block to 3.1 mm from these same images.
+
+### Why the policy commits early, and why the obvious fix is already ruled out
+
+ACT predicts 32 actions from one observation and executes all of them open
+loop, about a second. The descent and the close sit either side of a phase
+boundary. If the chunk containing the close is predicted from an observation
+taken at hover height and the policy underestimates how many steps the
+descent needs, the close fires while the arm is still high and **nothing can
+correct it until the chunk ends.**
+
+The obvious remedy is to replan more often, and that was measured: 92.5% at
+32 action steps, 85.0% at 16, 32.5% at 8. It makes things much worse.
+A longer chunk was also measured and is no better. So the fix is not a
+horizon setting, and the useful directions are elsewhere:
+
+* the demonstrator itself is only 97.5% strict under the jitter its data was
+  collected with, so some of this timing sloppiness is in the labels
+* a grasp-phase-only correction, which is what the residual RL stage was
+  rescoped to do and has never been run
+
+### An incidental observation
+
+Successful trials show a **second gripper close** at around step 410 to 490,
+with the tool 260 to 280 mm from the block and 70 mm above it, closing on
+air and moving the block 0.0 mm. The policy shuts its fingers again after
+returning home. It is harmless — the block is already placed and
+undisturbed — and it is invisible to every gate, because the release frame
+is taken from the last moment the block was actually held. It is worth
+knowing about before anyone reads a raw gripper trace and is puzzled by it.

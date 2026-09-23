@@ -47,5 +47,11 @@ target-version = "py311"
 select = ["E", "F", "I", "UP", "B"]
 ignore = ["E501"]
 
+[tool.ruff.lint.isort]
+# Pin `src` as first-party rather than letting ruff infer it. Inference reads
+# the filesystem, so import classification would otherwise vary between a
+# working tree and a fresh clone.
+known-first-party = ["src"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]

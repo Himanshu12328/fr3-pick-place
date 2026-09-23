@@ -1,0 +1,13 @@
+# Normalise text files to LF in the working tree, not only in the repository,
+# so byte-level tooling (hashing, diffing, linters) sees the same content on
+# Windows as it does in CI.
+* text=auto eol=lf
+
+# Binary, never touched.
+*.png binary
+*.gif binary
+*.mp4 binary
+*.pdf binary
+*.npz binary
+*.pkl binary
+*.safetensors binary

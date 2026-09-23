@@ -159,7 +159,7 @@ def render(rows, label, out_path, note=None):
     names = list(reversed(GATES))
     vals = [summary["gates"][g] * 100 for g in names]
     bars = ax.barh(names, vals, color=PASS_COLOUR, alpha=0.85)
-    for b, v in zip(bars, vals):
+    for b, v in zip(bars, vals, strict=True):
         ax.text(min(v + 1.5, 101), b.get_y() + b.get_height() / 2,
                 f"{v:.0f}%", va="center", fontsize=9)
     ax.set_xlim(0, 112)
