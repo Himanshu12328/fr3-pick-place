@@ -24,8 +24,8 @@ worth it. A deterministic demonstrator produces the same episode every time
 for a given block pose, so the policy fits the demonstrator rather than the
 task.
 
-Roughly 24 episodes per minute. **Do not run evaluations alongside it** —
-they are CPU bound on the same cores and drop collection to a fifth of that.
+Roughly 24 episodes per minute. **Do not run evaluations alongside it.**
+They are CPU bound on the same cores and drop collection to a fifth of that.
 
 ## 2. Gate, before converting anything
 
@@ -113,7 +113,7 @@ python -m src.scripts.eval_strict `
 | screening and checkpoint selection | 61, 62, 63 |
 | reporting | 71, 72, 73, 74, 75, 76 |
 
-Seeds 51–56 are retired from reporting. They were used for selection in
+Seeds 51 to 56 are retired from reporting. They were used for selection in
 earlier stages, which is how the 86.8% result ended up contaminated.
 
 ## Sanity checks that are cheap and worth repeating

@@ -42,8 +42,8 @@ The task was specified as a sequence:
 
 `check_success` tests one instant of that and nothing else. Worse,
 `rollout.run_trial` **breaks the loop the moment it fires**, so the recorded
-episode length is meaningless and every frame after the block touches down —
-the entire retreat, a third of what a demonstration contains — was never
+episode length is meaningless and every frame after the block touches down,
+the entire retreat and a third of what a demonstration contains, was never
 simulated, never scored, and never seen.
 
 ### What was built
@@ -60,7 +60,7 @@ actually failed:
 | `lifted_off` | tool rose ≥ 30 mm before translating > 20 mm sideways | open fingers dragged the placed block 17.4 mm on average, up to 38.4 mm |
 | `home` | tool ends within 60 mm of the home xy, having reached z ≥ 0.50 | the demonstrations retreat 282 mm over 59 steps; nothing required it |
 | `undisturbed` | block moved ≤ 5 mm between release and the end of the settle | the oracle moves it 0.06 mm |
-| `in_time` | episode length within the demonstrations' p10–p90, 227 to 367 steps | a teacher did it in 73 steps and looked nothing like a demonstration |
+| `in_time` | episode length within the demonstrations' p10 to p90, 227 to 367 steps | a teacher did it in 73 steps and looked nothing like a demonstration |
 
 A trial passes only if **all eight** hold.
 
@@ -83,7 +83,7 @@ constants measured from all 221 recorded episodes.
 The same argument `test_harness.py` and `test_rl_env.py` make. A metric that
 has not been scored on a known-good policy is aimed at nothing.
 
-**Positive control — the scripted oracle, 60 trials:**
+**Positive control, the scripted oracle, 60 trials:**
 
 | | jitter 0, n=20 | jitter 1.0, n=40 |
 |---|---|---|
@@ -98,7 +98,7 @@ These reproduce the documented oracle figures exactly, including the
 0.06 mm disturbance and the 0.991-vs-0.988 trajectory score. The instrument
 agrees with the one policy already known to be correct.
 
-**Negative control — the same oracle at 3× demonstration speed.** Identical
+**Negative control, the same oracle at 3× demonstration speed.** Identical
 waypoints, identical controller, `step_m` raised from the measured per-phase
 speeds to a flat 12 mm/step:
 
@@ -106,7 +106,7 @@ speeds to a flat 12 mm/step:
 |---|---|
 | loose `check_success` | **100.0%** |
 | **strict** | **0.0%** |
-| `in_time` | 0.0% (205 steps, band is 227–367) |
+| `in_time` | 0.0% (205 steps, band is 227 to 367) |
 | `released_low` / `lifted_off` / `home` / `undisturbed` | 85% each |
 | trajectory score | 0.594 against the oracle's 0.988 |
 
@@ -117,8 +117,8 @@ the same 100%-while-wrong signature the RL teachers produced.
 ### Incidental fix: render resolution can no longer drift
 
 `config.py` warns that the training and evaluation resolution must match,
-because the backbone is fully convolutional and accepts any size silently —
-a mismatch once cost this project 60% success down to 0.4% with no error
+because the backbone is fully convolutional and accepts any size silently.
+A mismatch once cost this project 60% success down to 0.4% with no error
 raised. It then stated the constant, and `rollout.py` **stated it a second
 time**, hardcoded. Two copies of a constant that must agree is that bug
 waiting to happen, and this work is about to introduce a second resolution.
@@ -185,8 +185,8 @@ both would have quietly distorted every number.
 
 ### The timing band was rejecting near-perfect trajectories
 
-`in_time` was set to the demonstrations' p10–p90, 227 to 367 steps. **By
-construction 20% of the demonstrations fall outside their own p10–p90.** The
+`in_time` was set to the demonstrations' p10 to p90, 227 to 367 steps. **By
+construction 20% of the demonstrations fall outside their own p10 to p90.** The
 gate was demanding behaviour tighter than the data it was measured from.
 
 On ACT it threw out 8 episodes. Their trajectory scores against the
@@ -213,7 +213,7 @@ added at **trajectory score ≥ 0.85**. Both are now calibrated so that
 **every one of the 221 recorded demonstrations passes them.**
 
 Widening the length band alone would have been wrong: the rushed oracle
-finishes in 205 steps, inside 195–452. What separates it is trajectory
+finishes in 205 steps, inside 195 to 452. What separates it is trajectory
 *shape*, not duration, and it scores 0.594. The two gates together reject
 it and neither does alone. Re-verified: oracle **100%**, rushed oracle
 **0% strict / 100% loose**.
@@ -249,7 +249,7 @@ recorded `block_start_pos`.
 
 **First attempt, and why it proved nothing.** 250 episodes, 6 frames each,
 10 epochs: 17.1 mm median error. That looks like a confirmation of the
-hypothesis. It was not — the loss was still falling steeply at the last
+hypothesis. It was not, because the loss was still falling steeply at the last
 epoch on 1,200 training frames. It measured an undertrained probe, not the
 images.
 
@@ -294,12 +294,12 @@ training data:
 
 | block start x | ACT delivered | oracle training episodes | human episodes |
 |---|---|---|---|
-| 0.460 – 0.490 | 95.8% | 18.0% | 19.5% |
-| 0.490 – 0.520 | 90.0% | 19.9% | 23.1% |
-| 0.520 – 0.550 | **100.0%** | 14.9% | 21.7% |
-| 0.550 – 0.580 | **100.0%** | 16.0% | 13.6% |
-| 0.580 – 0.610 | 86.7% | 14.1% | 12.7% |
-| **0.610 – 0.640** | **66.7%** | 17.1% | 9.5% |
+| 0.460 to 0.490 | 95.8% | 18.0% | 19.5% |
+| 0.490 to 0.520 | 90.0% | 19.9% | 23.1% |
+| 0.520 to 0.550 | **100.0%** | 14.9% | 21.7% |
+| 0.550 to 0.580 | **100.0%** | 16.0% | 13.6% |
+| 0.580 to 0.610 | 86.7% | 14.1% | 12.7% |
+| **0.610 to 0.640** | **66.7%** | 17.1% | 9.5% |
 
 **The far bin is not undersampled in the oracle data.** It holds 17.1% of
 the 800 oracle episodes, essentially the uniform share. This is the opposite
@@ -316,12 +316,12 @@ Re-running the frame-0 perception probe, binned the same way:
 
 | block start x | probe median | probe p90 | n |
 |---|---|---|---|
-| 0.460 – 0.490 | 2.7 mm | 6.5 mm | 14 |
-| 0.490 – 0.520 | 3.8 mm | 5.9 mm | 12 |
-| 0.520 – 0.550 | **1.2 mm** | 2.0 mm | 8 |
-| 0.550 – 0.580 | **1.5 mm** | 4.2 mm | 15 |
-| 0.580 – 0.610 | 2.7 mm | 5.7 mm | 15 |
-| **0.610 – 0.640** | **4.7 mm** | **11.0 mm** | 16 |
+| 0.460 to 0.490 | 2.7 mm | 6.5 mm | 14 |
+| 0.490 to 0.520 | 3.8 mm | 5.9 mm | 12 |
+| 0.520 to 0.550 | **1.2 mm** | 2.0 mm | 8 |
+| 0.550 to 0.580 | **1.5 mm** | 4.2 mm | 15 |
+| 0.580 to 0.610 | 2.7 mm | 5.7 mm | 15 |
+| **0.610 to 0.640** | **4.7 mm** | **11.0 mm** | 16 |
 
 The far bin is the worst for the probe too, about three times the
 mid-range error, and the only bin whose p90 crosses 10 mm. The per-bin
@@ -331,8 +331,8 @@ But the size of the effect matters. **4.7 mm is still well inside the grasp
 tolerance**, and the probe manages it while ACT fails 33% of trials in the
 same region. So degraded sensing is a contributing factor and not the
 mechanism. The reading that fits both measurements is that the far edge
-carries a slightly weaker signal, and ACT — which is not required to
-represent block position at all — amplifies that weakness into a missed
+carries a slightly weaker signal, and ACT, which is not required to
+represent block position at all, amplifies that weakness into a missed
 grasp, while a network explicitly trained to extract it does not.
 
 That is an argument for auxiliary supervision specifically, and it predicts
@@ -399,8 +399,8 @@ would have been rejected rather than silently mislabelled.
 residual failures are grasps that never happened on states the training
 distribution does not contain, and that is the one thing more demonstrations
 of correct behaviour cannot fix. The earlier DAgger attempt failed on
-dataset composition — gripper open fraction 0.960 against the
-demonstrations' 0.557, and 29.4% of frames from failed episodes — and both
+dataset composition (gripper open fraction 0.960 against the
+demonstrations' 0.557, and 29.4% of frames from failed episodes), and both
 are now measured before conversion rather than diagnosed after.
 
 ---
@@ -444,9 +444,9 @@ Per-metric, over 200 episodes:
 
 | phase | collected | demonstrations |
 |---|---|---|
-| approach | 2.28 mm/step | 1.85 (band 1.33–2.49) |
-| carry | 2.86 mm/step | 3.27 (band 2.67–3.81) |
-| retreat | **2.74 mm/step** | **4.78 (band 4.17–5.17)** |
+| approach | 2.28 mm/step | 1.85 (band 1.33 to 2.49) |
+| carry | 2.86 mm/step | 3.27 (band 2.67 to 3.81) |
+| retreat | **2.74 mm/step** | **4.78 (band 4.17 to 5.17)** |
 
 Every collected phase sits near 2.7 mm/step. The demonstrations are
 deliberately **slow to position, quicker to carry, quickest to leave**. The
@@ -464,7 +464,7 @@ places the target a fixed 12 mm ahead of the tool. **A fixed lead produces
 one speed**, whatever the phase.
 
 `__call__` is the phase machine. It rate-limits the target to
-`PHASE_STEP_M`, which is 1.85 / 3.27 / 4.78 mm per step — the measured
+`PHASE_STEP_M`, which is 1.85 / 3.27 / 4.78 mm per step, the measured
 demonstration speeds. It scores 0.987.
 
 When the oracle is driving there is no student to be reactive for, so the
@@ -486,7 +486,7 @@ time.
 
 That is exactly the degenerate demonstrator the jitter was added to prevent,
 and the jitter had silently never applied to it. It also explains why the
-oracle scored identically at jitter 0 and jitter 1.0 in the S0 controls —
+oracle scored identically at jitter 0 and jitter 1.0 in the S0 controls:
 the jitter was doing nothing.
 
 Both are fixed. `__call__` now uses `jit_grasp`, `jit_hover`, `jit_transit`
@@ -523,7 +523,7 @@ re-running it:
 
 | | act_oracle_v1 @ 20,000, seed 51 |
 |---|---|
-| original p10–p90 gates | 77.0% |
+| original p10 to p90 gates | 77.0% |
 | **recalibrated gates** | **81.0%** |
 
 81.0% is a lower bound: `released_low` cannot be recomputed from the saved
@@ -549,7 +549,7 @@ grasps, which needs the auxiliary target and then DAgger.
 
 DAgger cannot use the phase machine, because it has to answer for states the
 oracle's own trajectory never reaches. So `label()` was given a per-phase
-lead scale — the only control it has over speed — set to the ratio of each
+lead scale, the only control it has over speed, set to the ratio of each
 demonstration speed to the 2.7 mm/step a fixed 12 mm lead produces.
 
 Driving the arm with the labeller itself, 25 trials, no rendering:
@@ -557,8 +557,8 @@ Driving the arm with the labeller itself, 25 trials, no rendering:
 | | before | after |
 |---|---|---|
 | trajectory score | 0.832 | **0.950** |
-| `demo_like` | — | 92% |
-| strict | — | 80% |
+| `demo_like` | n/a | 92% |
+| strict | n/a | 80% |
 
 Still short of the phase machine's 0.987, and its remaining failures are
 `in_time` (3 episodes under 195 steps, 2 over 452) and one episode that
@@ -573,7 +573,7 @@ enough to be a DAgger teacher; revisited before that stage.
 have reached `RETREAT_Z`, which is 0.500.
 
 So an episode could be declared finished at 0.492 and then fail `home` for
-never having reached 0.500 — **a failure the harness created by stopping the
+never having reached 0.500, **a failure the harness created by stopping the
 policy one step early**, not one the policy earned. It never showed on the
 oracle, which retreats to 0.518, so the positive control could not have
 caught it. It would have quietly cost ACT some fraction of its `home` gate.
@@ -594,7 +594,7 @@ failures.
 
 `reference.phases` takes the first gripper close and the first open after
 it. That is correct for a clean demonstration and wrong for a policy that
-grasps, misses, opens, and grasps again — a mode one RL teacher hit in 72 of
+grasps, misses, opens, and grasps again, a mode one RL teacher hit in 72 of
 100 episodes.
 
 On such an episode the "release" is the failed grasp, so `released_low`,
@@ -635,7 +635,7 @@ The composition gate, old dataset against new:
 | sd episode length | 85.8 | 43.3 | 52.9 |
 | gripper open fraction | 0.488 | 0.488 | 0.557 |
 | share of frames from failed episodes | 0.037 | **0.006** | 0.000 |
-| episodes with a recorded block pose | 0.000 | **1.000** | — |
+| episodes with a recorded block pose | 0.000 | **1.000** | n/a |
 
 Excluding the 3 failed episodes, over the 997 that are kept:
 
@@ -694,7 +694,7 @@ Per-column spread in the new dataset before normalisation:
 | block_yaw | 0.0510 | 0.4646 |
 
 Two of the eight existing action dimensions, `qw` and `qz`, are **exactly
-constant** — the tool is always gripper-down, so those quaternion components
+constant**, because the tool is always gripper-down, so those quaternion components
 are always zero. They carry no information and contribute nothing to the
 loss, which means the effective action vector was never 8 dimensions. Not a
 defect, and it predates all of this, but it is worth knowing when reasoning
@@ -774,7 +774,7 @@ recalibration the timing gate is no longer rejecting near-misses at all; it
 is reporting episodes that never finished.
 
 **5 of 40 delivered the block and then failed to go home.** That is 12.5% of
-trials lost to the phase the old training data represented worst — the
+trials lost to the phase the old training data represented worst. The
 retreat was the phase whose speed was 1.7× too slow, and 22% of the mixed
 dataset was human episodes with no retreat at all.
 
@@ -818,7 +818,7 @@ them dominate the loss. This is how 12.5% failed episodes became 29.4% of
 frames last time.
 
 **Do not gate DAgger data on trajectory score.** When the student drives
-badly the oracle's labels *should* look unlike a demonstration — that is
+badly the oracle's labels *should* look unlike a demonstration. That is
 recovery behaviour, and it is the entire reason for collecting it. The gate
 checks that apply are gripper open fraction and failed-frame share. This is
 a deliberate exception, recorded so it is not mistaken for an oversight.
@@ -878,7 +878,7 @@ checking against a measurement rather than accepted.**
 ### How it resolved
 
 Stopping the telemetry process was blocked by the permission system, which
-is correct — it is the user's machine and not part of this project.
+is correct, since it is the user's machine and not part of this project.
 
 It turned out not to be necessary. The leak is **cyclical rather than
 monotonic**: the agent is trimmed back periodically, dropping to 631 MB at
@@ -986,9 +986,9 @@ Block moved 0.52 mm after release on average. Trajectory score 0.932.
 
 | block start x | baseline delivered | **Run A strict** |
 |---|---|---|
-| x < 0.53 | — | 92.3% |
-| x >= 0.53 | — | **96.3%** |
-| far bin 0.610–0.640, baseline | **66.7%** | — |
+| x < 0.53 | n/a | 92.3% |
+| x >= 0.53 | n/a | **96.3%** |
+| far bin 0.610 to 0.640, baseline | **66.7%** | n/a |
 
 The far region was the baseline's worst, at 66.7% delivered in the top bin,
 and S4 established it was not a coverage problem. It is now the *stronger*
@@ -1050,7 +1050,7 @@ the cheaper order and is now the default.
 
 Checkpoint 30,000, **seeds 71 to 76, 100 trials each, 600 trials total**.
 None of these seeds has been used for any selection decision at any point in
-this project. Seeds 51–56 are retired for contamination; 61 and 62 were used
+this project. Seeds 51 to 56 are retired for contamination; 61 and 62 were used
 for the sweep and the confirmation, so they are excluded too.
 
 ### Result: 92.3% ± 2.6% strict over 600 trials
@@ -1093,8 +1093,8 @@ describes the task.
 
 The 13 release failures are marginal rather than gross: the tool is at 0.4543
 against a 0.450 limit, four millimetres too high, with the block descending
-at 102 mm/s. That is a small genuine drop, not a place — the block bottom
-sits about 10 mm above the table when the fingers open — but it is nothing
+at 102 mm/s. That is a small genuine drop, not a place, since the block bottom
+sits about 10 mm above the table when the fingers open, but it is nothing
 like the 95 mm drop the gate was built to catch.
 
 So the residual is roughly half quality and half genuine task failure.
@@ -1116,8 +1116,8 @@ Checkpoint 30,000, screening seed 61, 40 trials:
 | **32 (default)** | **92.5%** | 92.5% | 0.914 | 79 mm |
 
 **Monotonically worse the more often it replans**, and at 8 it collapses.
-This reproduces the Stage 1 finding — 88% to 0% as replanning went from
-every 32 steps to every step — and extends it: that was measured with
+This reproduces the Stage 1 finding, 88% to 0% as replanning went from
+every 32 steps to every step, and extends it: that was measured with
 temporal ensembling, and this shows plain chunk shortening does the same
 thing. Whatever ACT gains from committing to a long chunk on this task, it
 loses immediately when interrupted.
@@ -1131,7 +1131,7 @@ retraining, and it is the one direction this result argues for.
 
 300 episodes with the 92.3% policy driving and the oracle relabelling every
 state it reached. The student solved 285 of them, so this round is mostly
-on-policy coverage of *correct* behaviour rather than failure states — which
+on-policy coverage of *correct* behaviour rather than failure states, which
 is still the right thing to collect, because the student's own release
 states are exactly where it opens the fingers four millimetres too high, and
 the oracle relabels those with "keep descending".
@@ -1142,12 +1142,12 @@ the oracle relabels those with "keep descending".
 |---|---|---|---|
 | gripper open fraction | **0.549** | 0.557 | **0.960** |
 | share of frames from failed episodes | **0.084** | 0.000 | **0.294** |
-| **never released** | **1.000** | 0.000 | — |
+| **never released** | **1.000** | 0.000 | n/a |
 | mean episode length | 238.6 | 295.5 | 206 |
 
 **The two checks that destroyed the earlier DAgger dataset both passed.**
 Gripper open fraction is within 0.008 of the demonstrations, against 0.960
-last time — that is the phase-scaled reactive labeller from S6 working.
+last time, and that is the phase-scaled reactive labeller from S6 working.
 
 **And a third check, which had never been run on a DAgger dataset before,
 failed completely.**
@@ -1162,7 +1162,7 @@ The label is asked for *before* the driver moves, because otherwise it would
 describe a state the student never saw. And the student path broke out of
 the loop the moment `check_success` fired. So on the step where the
 student's release lets the block land, the label recorded was computed while
-the block was still held, and it says "gripper closed" — and then the
+the block was still held, and it says "gripper closed", and then the
 episode ends.
 
 A policy trained on that learns to approach, grasp, carry, descend, and
@@ -1179,7 +1179,7 @@ entire reason that step exists.
 
 Both drivers now continue until the arm is clear and back at home, which is
 what the oracle path already did and for the same stated reason. Episode
-lengths went from 186–280 steps to 265–364, the retreat now being included.
+lengths went from 186 to 280 steps to 265 to 364, the retreat now being included.
 
 The chain that follows re-runs the gate and **aborts before conversion** if
 `never_released` is still above 0.15, rather than trusting the fix.
@@ -1208,13 +1208,13 @@ Measured directly on the 300 episodes:
 
 So in 84 episodes the label said *"keep approaching the block"* from start to
 finish while the block was already in the gripper being carried to the
-target. Not missing labels — **confidently wrong ones**, which is worse,
+target. Not missing labels but **confidently wrong ones**, which is worse,
 because behaviour cloning has no way to discount them.
 
 ### Cause: latched state that was documented as removed
 
 `label()` decides whether the block is held from
-`closed = float(self.grip) < 0.02` — **the oracle's own last commanded
+`closed = float(self.grip) < 0.02`, **the oracle's own last commanded
 gripper**. The oracle only commands a close once the tool reaches its own
 computed grasp pose within 6 mm in z and 10 mm in xy.
 
@@ -1267,15 +1267,15 @@ running it.
 
 | check | v2 | v3 | **v4** | demonstrations | the Stage 3 set that failed |
 |---|---|---|---|---|---|
-| `never_grasped` | 0.280 | 0.280 | **0.023** | 0.000 | — |
-| `never_released` | **1.000** | 0.280 | **0.027** | 0.000 | — |
+| `never_grasped` | 0.280 | 0.280 | **0.023** | 0.000 | n/a |
+| `never_released` | **1.000** | 0.280 | **0.027** | 0.000 | n/a |
 | gripper open fraction | 0.549 | 0.651 | **0.530** | 0.557 | 0.960 |
 | frames from failed episodes | 0.084 | 0.078 | **0.078** | 0.000 | 0.294 |
 
 **The first DAgger dataset in this project to clear its composition checks.**
 The two defects that produced v2 and v3 were both invisible to training loss
 and to the success rate, and both would have been diagnosed after the fact
-as "DAgger does not work on this task" — which is what happened the first
+as "DAgger does not work on this task", which is what happened the first
 time, in Stage 3, and was recorded as a property of DAgger rather than of a
 labelling bug.
 
@@ -1294,7 +1294,7 @@ learning rate halved to 5e-5, 15,000 steps. Screening seed 61, 40 trials:
 | 15,000 | 57.5% | 92.5% | 35.0 | 0.804 |
 
 Against the base policy's 92.3% strict. **Loose success survived; quality
-collapsed** — the gap reopened to as much as 55 points and `demo_like` fell
+collapsed**. The gap reopened to as much as 55 points and `demo_like` fell
 to 38%. This is the same signature the whole project keeps producing: a
 policy that puts the block on the target while doing something else.
 
@@ -1317,8 +1317,8 @@ A 0.951 dataset cannot explain a policy at 0.80.
 down to 57.5% after only 2,500 steps.
 
 So the collapse is a property of **training onward from that checkpoint**,
-not of the DAgger data. Checkpoint 30,000 is a sharp optimum — adjacent
-checkpoints differ by 25 points on this task — and a fresh optimizer at any
+not of the DAgger data. Checkpoint 30,000 is a sharp optimum, since adjacent
+checkpoints differ by 25 points on this task, and a fresh optimizer at any
 appreciable learning rate walks off it immediately.
 
 **This experiment cannot answer whether DAgger helps.** Recording it as
@@ -1343,7 +1343,7 @@ run rather than a whole pipeline.
 | previously reported best (`act_oracle_v1`) | 92.5% | **72.5%** | 40 |
 | **`act_oracle_v2` @ 30,000** | **96.7%** | **92.3% ± 2.6%** | **600** |
 
-Reported on seeds 71–76, none used for any selection decision.
+Reported on seeds 71 to 76, none used for any selection decision.
 
 ### What actually moved the number
 
@@ -1352,7 +1352,7 @@ backbone and auxiliary supervision. **None of those were used.**
 
 | intervention | outcome |
 |---|---|
-| higher image resolution | **not needed** — the block is legible to 3.1 mm at 160×128 |
+| higher image resolution | **not needed**, the block is legible to 3.1 mm at 160×128 |
 | bigger backbone | not tried, for the same reason |
 | auxiliary block-pose target | built and validated end to end, **never needed** |
 | oracle-only data | used |
@@ -1374,7 +1374,7 @@ profile into one constant speed and made the retreat 1.7× too slow.
 | # | where | what |
 |---|---|---|
 | 1 | `eval/rollout.py` | success criterion could not see a shove, a drop or a hover, and the loop broke before the retreat |
-| 2 | `eval/strict.py` | timing band was p10–p90, rejecting trajectories scoring 0.998 |
+| 2 | `eval/strict.py` | timing band was p10 to p90, rejecting trajectories scoring 0.998 |
 | 3 | `eval/strict.py` | release velocity measured solver noise, not the block |
 | 4 | `eval/strict.py` | termination height 10 mm under the gate it fed, manufacturing failures |
 | 5 | `eval/strict.py` | release frame was the first gripper opening, not the last |
@@ -1389,7 +1389,7 @@ Three were found by the composition gate before anything trained.
 
 ### What would be tried next
 
-1. ~~The clean DAgger test~~ — **done, and negative.** Adding 285 DAgger
+1. ~~The clean DAgger test~~. **Done, and negative.** Adding 285 DAgger
    episodes to 997 oracle episodes cost 27 points under an otherwise
    identical training run. The leading explanation is that a chunked policy
    cannot use per-step corrections as a 32-step plan; testing that needs
@@ -1412,7 +1412,7 @@ of matching the teacher more exactly, not of finding a better teacher.
 
 ### The clean DAgger test: it genuinely hurts
 
-Trained from scratch on the merged dataset, identical procedure to Run A —
+Trained from scratch on the merged dataset, identical procedure to Run A:
 same 30,000 steps, same learning rate, same batch size, same architecture.
 **Only the dataset differs.** Screening seed 61, 40 trials:
 
@@ -1455,7 +1455,7 @@ it hurts here on a much stronger one, without needing the "style mixing"
 explanation the README previously offered.
 
 It is a hypothesis, and the experiment that would test it is single-step
-DAgger — chunk size 1, or relabelling with the oracle's own rollout from
+DAgger, chunk size 1, or relabelling with the oracle's own rollout from
 each student state rather than a per-step correction. Neither was run. It is
 recorded as the leading explanation, not as a finding.
 
@@ -1476,7 +1476,7 @@ set on this task, not another bug.
 `n_action_steps` measured 92.5 / 85.0 / 32.5 percent at 32 / 16 / 8. The
 policy gets monotonically worse the more often it replans, and 32 was the
 ceiling because that is the `chunk_size` it was trained with. The obvious
-question — what happens with a longer chunk — cannot be answered at
+question, what happens with a longer chunk, cannot be answered at
 inference time and needs a retrain.
 
 Training ACT with `chunk_size=64`, `n_action_steps=64`, on the same 997
@@ -1494,7 +1494,7 @@ of an episode. Committing further might continue to help.
 
 Against: a 64-step chunk is 2.1 seconds of open-loop motion, which spans an
 entire phase boundary. The grasp happens around step 105 and the release
-around step 236 — with 64-step chunks the policy must commit to a plan that
+around step 236. With 64-step chunks the policy must commit to a plan that
 crosses those transitions blind, and both are the moments millimetres
 matter. The `released_low` gate is already the worst one at 94.3%, and it is
 measured exactly at a phase boundary.
@@ -1543,7 +1543,7 @@ episode length 286 steps against the demonstrations' 295, block moved
 **The prediction was 60 to 90% and most likely below chunk 32.** It came in
 at the top of the range and slightly above. The reasoning that a 64-step
 chunk would have to commit blind across the grasp and release phase
-boundaries was sound but did not dominate — and the counter-argument in the
+boundaries was sound but did not dominate, and the counter-argument in the
 same prediction turned out to be the operative one: the `n_action_steps`
 trend was a train-inference *mismatch* effect, not evidence that shorter
 horizons are intrinsically worse, so it did not extrapolate. Retraining at
@@ -1555,9 +1555,9 @@ A 600-trial report on the clean seeds is running to see whether the
 
 ### And the clean seeds overturned it. Chunk 32 stays.
 
-600 trials, seeds 71–76:
+600 trials, seeds 71 to 76:
 
-| | screening seeds 61+62, n=80 | **clean seeds 71–76, n=600** |
+| | screening seeds 61+62, n=80 | **clean seeds 71 to 76, n=600** |
 |---|---|---|
 | chunk 32 @ 30,000 | 93.75% | **92.3% ± 2.6%** |
 | chunk 64 @ 27,500 | **96.25%** | **90.2% ± 1.1%** |
@@ -1614,7 +1614,7 @@ Sweep, screening seed 61:
 | 27,500 | 80.0% | 82.5% | 0.896 | 340 |
 | 30,000 | 80.0% | 87.5% | 0.900 | 337 |
 
-**600 trials on clean seeds 71–76: 93.0% ± 1.3% strict, 95.0% loose.**
+**600 trials on clean seeds 71 to 76: 93.0% ± 1.3% strict, 95.0% loose.**
 Per seed 93 / 92 / 95 / 91 / 94 / 93.
 
 Selection was done on seed 61 only and the report run straight afterwards.
@@ -1666,7 +1666,7 @@ students are behind it by about the same amount.
 
 ## S16. Ensembling the two: 97.5%, and a contamination problem with it
 
-The three single policies plateau at 92–93%, but their **regional profiles
+The three single policies plateau at 92 to 93%, but their **regional profiles
 are near mirror images**: ResNet18 is 6.8 points better near the base,
 ResNet34 is 5.4 points better far from it, on the same data with the same
 uniform block distribution. Two models that fail in different places is the
@@ -1677,7 +1677,7 @@ and `act_r34` @ 25,000. Two details:
 
 **The gripper is not averaged.** It is binary in the data and the evaluation
 calls anything under 0.02 closed, so averaging a closed command with an open
-one lands exactly on the threshold — ambiguous precisely when the models
+one lands exactly on the threshold, ambiguous precisely when the models
 disagree about the grasp or release frame. They vote instead, and on
 disagreement the previous command is held.
 
@@ -1685,7 +1685,7 @@ disagreement the previous command is held.
 gripper-down at all times, so the two are always close and this approximates
 proper interpolation well.
 
-### Result on seeds 71–76
+### Result on seeds 71 to 76
 
 | | |
 |---|---|
@@ -1705,18 +1705,18 @@ proper interpolation well.
 | `demo_like` | 97.8% |
 
 Mean lift **80 mm**, exactly the demonstrations'. Trajectory score 0.959.
-Regional split 97.0% near and 97.8% far — the first policy in this project
+Regional split 97.0% near and 97.8% far, the first policy in this project
 with no regional weakness at all.
 
 ### Why that number is not yet the claim
 
 **The decision to build this ensemble was informed by clean-seed data.** The
 complementary regional profiles that motivated it came from the 600-trial
-reports of chunk 32 and ResNet34 on seeds 71–76 — and then the ensemble was
+reports of chunk 32 and ResNet34 on seeds 71 to 76, and then the ensemble was
 reported on those same seeds.
 
 Nothing was numerically tuned on them. No hyperparameter, no checkpoint, no
-threshold was chosen by looking at seeds 71–76. But the *existence* of this
+threshold was chosen by looking at seeds 71 to 76. But the *existence* of this
 experiment was suggested by them, and that is the same category of error
 this project has already paid for twice: once when seed 51 drove checkpoint
 selection and was then included in the 86.8% headline, and once this week
@@ -1724,7 +1724,7 @@ when chunk 64 looked 2.5 points better on its screening seeds and came out
 2.1 points worse on clean ones.
 
 The rule the project uses is that reporting seeds must be untouched by any
-decision. These are not, so a fresh set is being run: **seeds 81–86, never
+decision. These are not, so a fresh set is being run: **seeds 81 to 86, never
 used for anything.** Both numbers will be reported.
 
 If the fresh number holds near 97.5%, the target is met. If it drops the way
@@ -1735,8 +1735,8 @@ headline stays at 93.0%.
 
 | seed set | strict | loose | per seed |
 |---|---|---|---|
-| 71–76, idea-contaminated | 97.5% ± 0.8% | 98.7% | 98/97/97/99/97/97 |
-| **81–86, never used for anything** | **96.5% ± 1.8%** | 97.7% | 96/100/96/96/97/94 |
+| 71 to 76, idea-contaminated | 97.5% ± 0.8% | 98.7% | 98/97/97/99/97/97 |
+| **81 to 86, never used for anything** | **96.5% ± 1.8%** | 97.7% | 96/100/96/96/97/94 |
 | **pooled, n=1,200** | **97.00%** | 98.17% | sd 1.5 across 12 seeds |
 
 **95% confidence interval 96.0% to 98.0%.**
@@ -1751,7 +1751,7 @@ is small enough to be noise.
 **97.0% strict pick-and-place over 1,200 trials, 95% CI 96.0 to 98.0.**
 
 The target of 97% is met at the point estimate and the interval straddles
-it. Separating 97% from 96% with confidence would need more trials — this
+it. Separating 97% from 96% with confidence would need more trials. This
 README already estimated 1,500 to 2,000 for that class of claim, and 1,200
 is short of it. So the honest statement is that the policy is at
 approximately 97%, not that it is provably above it.
@@ -1777,7 +1777,7 @@ data, same criterion, same seeds protocol.
 **The student has effectively caught its teacher.** The oracle's own 2.5%
 strict failure rate under the jitter its data was collected with is now the
 same order as the student's, which means further gains need a better
-demonstrator rather than a better student — collect at lower jitter, or
+demonstrator rather than a better student: collect at lower jitter, or
 filter the training set to strict-clean episodes. Both are listed in "what
 would be tried next" and neither was run.
 
@@ -1842,7 +1842,7 @@ closed in the wrong place.
 
 The block's half-height is 22.0 mm. A successful grasp closes with the tool
 1 to 2 mm *below* the block's centre, so the fingers straddle it and settle
-at about 30 mm — the width of the block between them. All three failures
+at about 30 mm, the width of the block between them. All three failures
 closed at **+21.6 mm**, which is exactly level with the **top face**. The
 fingers came together above the block, caught its top edge or nothing at
 all, and settled at 8 to 18 mm. The block was shoved 3 to 12 mm sideways in
@@ -1851,7 +1851,7 @@ the process.
 The consistency is the striking part: +21.6, +21.5, +21.7 mm. That is not
 scatter, it is a single reproducible mode. **The policy skipped the descent
 and closed at hover height.** Lateral offset and yaw were also unconverged
-at that moment — 2.4× and 6× worse than a successful grasp — which is what
+at that moment, 2.4× and 6× worse than a successful grasp, which is what
 being at the wrong point in the trajectory looks like.
 
 So the residual failure is a **timing failure, not a perception failure or a
@@ -1882,7 +1882,7 @@ horizon setting, and the useful directions are elsewhere:
 Successful trials show a **second gripper close** at around step 410 to 490,
 with the tool 260 to 280 mm from the block and 70 mm above it, closing on
 air and moving the block 0.0 mm. The policy shuts its fingers again after
-returning home. It is harmless — the block is already placed and
-undisturbed — and it is invisible to every gate, because the release frame
+returning home. It is harmless, since the block is already placed and
+undisturbed, and it is invisible to every gate, because the release frame
 is taken from the last moment the block was actually held. It is worth
 knowing about before anyone reads a raw gripper trace and is puzzled by it.

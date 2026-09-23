@@ -9,7 +9,7 @@ The target set for this session: **99.99% strict pick and place**. It is
 worth saying immediately that 99.99% is a claim about one failure in ten
 thousand, and that bounding it below at 99.99% with 95% confidence requires
 roughly **30,000 consecutive clean trials**. The reporting protocol carried
-over from `PATH_TO_97.md` is six seeds of a hundred, twice — 1,200 trials —
+over from `PATH_TO_97.md` is six seeds of a hundred, twice, 1,200 trials,
 which can bound nothing tighter than **99.75%**. Both numbers are reported
 throughout, and no sentence in this document claims 99.99% on 1,200 trials.
 
@@ -24,7 +24,7 @@ throughout, and no sentence in this document claims 99.99% on 1,200 trials.
 > **The student has effectively caught its teacher.** The oracle's own 2.5%
 > strict failure rate under the jitter its data was collected with is now
 > the same order as the student's, which means further gains need a better
-> demonstrator rather than a better student — collect at lower jitter, or
+> demonstrator rather than a better student: collect at lower jitter, or
 > filter the training set to strict-clean episodes.
 
 That conclusion set the entire direction of what to do next. Two of the four
@@ -73,7 +73,7 @@ The gap is not noise: 99.7% and 97.0% on 1,000 and 1,200 trials do not
 overlap at any reasonable confidence.
 
 So the two data interventions the previous session recommended are aimed at
-a problem that does not exist. The labels are not the limiting factor — they
+a problem that does not exist. The labels are not the limiting factor. They
 already demonstrate 99.7% behaviour under exactly the jitter they were
 collected with. Collecting at lower jitter would improve a demonstrator
 that fails 3 times in 1,000, to close a gap of 27 in 1,000 that lives
@@ -104,7 +104,7 @@ generalise.
 
 So the instrument was rebuilt to record every gripper close of every trial,
 and run in a mode that changes nothing, over 200 trials on seeds 61, 62, 91
-and 92 — all of them already spent on screening or video in previous
+and 92, all of them already spent on screening or video in previous
 sessions, so no reporting seed informed anything below.
 
 The monitor-mode run reproduces the headline exactly: **97.00% strict on
@@ -130,7 +130,7 @@ encoders.
 ### The lateral offset does not separate, and that matters
 
 S17 also reported that failures sat at 13.3 mm lateral offset against 5.5 mm
-for successes — "2.4× larger" — and that yaw was 6× worse. On three trials
+for successes ("2.4× larger"), and that yaw was 6× worse. On three trials
 both were true. On 200:
 
 | lateral offset at first close | |
@@ -144,7 +144,7 @@ refused seventeen grasps that worked in order to catch five that did not.
 
 This is the most useful negative result of the session, because the plan
 approved before it was measured was to estimate the block's position from
-the cameras — the perception probe locates it to 3.1 mm — and gate the grasp
+the cameras (the perception probe locates it to 3.1 mm) and gate the grasp
 on lateral and yaw alignment as well as height. That component is not
 needed. The lateral offset is a **symptom** of being at the wrong point in
 the trajectory, exactly as S17 suspected, not an independent cause, and
@@ -193,7 +193,7 @@ grasp**.
 The same script reads the finger width 25 steps after the close. Measured,
 the two populations separate at 12 and not before: a real grasp is resolved
 one step after the command, already at 29.9 mm or wider, while an air close
-is still travelling and at 8 steps the widest of them is 33.5 mm —
+is still travelling and at 8 steps the widest of them is 33.5 mm,
 indistinguishable from a grasp. Twelve steps is the first point of clean
 separation and 25 is twice as long as the wait needs to be.
 
@@ -210,8 +210,8 @@ reason.
 **`in_time`** bands the episode at 195 to 452 steps, measured so that every
 one of the 221 demonstrations passes. A recovery adds an approach. The upper
 bound is now widened by `RECOVERY_ALLOWANCE_STEPS = 105` per recovery the
-runtime layer performed — one measured approach phase, because that is what
-a recovery repeats. It is deliberately one measured phase rather than a
+runtime layer performed, which is one measured approach phase, because that
+is what a recovery repeats. It is deliberately one measured phase rather than a
 round number, and deliberately not generous.
 
 **`demo_like`** scores the trajectory's shape per phase, and
@@ -222,8 +222,8 @@ measures everything from there to the end. The score collapses, and it
 collapses without saying anything about the trajectory that actually carried
 the block.
 
-`strict.evaluate_trace` already resolves the phase frames the robust way —
-from the last moment the block was genuinely in a closed gripper — precisely
+`strict.evaluate_trace` already resolves the phase frames the robust way,
+from the last moment the block was genuinely in a closed gripper, precisely
 because seven of its nine gates had this same problem, and one RL teacher in
 Stage 2 dropped and re-grasped in 72 of 100 episodes. `reference.describe`
 now accepts those frames instead of recomputing them from the first close.
@@ -258,7 +258,7 @@ differ by up to 4.6e-3, release heights by up to 0.8 mm, and one trial's
 release frame moved by a single step.
 
 The control that settles it is running monitor mode **twice** and comparing
-it to itself. The same code, the same seed, produces the same differences —
+it to itself. The same code, the same seed, produces the same differences,
 including the identical single-step release-frame flip. This is
 nondeterminism in GPU inference, not an effect of the wrapper. Monitor mode
 is a genuine no-op, and it reproduces the headline at 97.00% over 200
@@ -315,7 +315,7 @@ Four configurations on the four burned seeds, 200 trials each: monitor (the
 
 1. **Retry alone gains almost nothing.** This is the strongest prediction
    available and it is falsifiable. The four air-close failures already
-   attempt **37 to 45 closes each** without any help — the policy reopens
+   attempt **37 to 45 closes each** without any help. The policy reopens
    and re-closes dozens of times on its own and never recovers, because it
    keeps commanding the close at hover height. A rule that reopens the
    fingers and asks the same policy to replan is adding one more of
@@ -336,8 +336,8 @@ Four configurations on the four burned seeds, 200 trials each: monitor (the
 5. **The ceiling for this session is 99.7%, not 99.99%**, because that is
    what the demonstrator scores and nothing here improves the labels.
    Exceeding the teacher would require the supervisor to fix failures the
-   teacher itself commits, which is possible in principle — the teacher has
-   no supervisor — but is not what any rule above is designed for.
+   teacher itself commits, which is possible in principle, since the teacher has
+   no supervisor, but is not what any rule above is designed for.
 
 ### Outcome: one prediction right, one badly wrong
 
@@ -358,7 +358,7 @@ to 99%. It is worth zero points. And it is not that it failed to fire: it
 refused **36 closes across the four right trials, up to 29 in a single
 episode**, and they all still failed.
 
-**Prediction 3 is right by accident** — both configurations match veto alone
+**Prediction 3 is right by accident.** Both configurations match veto alone
 because both are worth nothing. **Prediction 4 is void**: the three
 thresholds are indistinguishable because the threshold was never what
 mattered.
@@ -377,7 +377,7 @@ can touch it.
 > measured per step, is correct and is the finding the rest of the document
 > builds on. But the lateral offset at descent onset (n=2) does not
 > separate on 200 trials, and the under-rotated wrist is *necessary to* but
-> not *sufficient for* the jam — one of the four jams happens 0.8 degrees
+> not *sufficient for* the jam, since one of the four jams happens 0.8 degrees
 > from perfect alignment. S25 gives the account that covers all four.
 
 Refusing a close does not unjam an arm, so the veto's zero raised a question
@@ -405,7 +405,7 @@ moment of the descent:
 | wrist q7 | +0.204 rad (limit +-3.02) | +0.546 rad |
 
 **The policy asks for the right descent and the arm does not go.** It sits
-at +21.9 mm — the block's half height, so exactly its top face — moving
+at +21.9 mm, the block's half height and so exactly its top face, moving
 twenty to a hundred times slower than a free descent, with the fingers wide
 open. That is contact, not sluggishness.
 
@@ -439,7 +439,7 @@ stopped.
 
 **The ensemble's quaternion averaging is not the cause.** `ensemble.py`
 averages the two members' quaternions and renormalises, justified by "both
-models are gripper-down at all times, so the two are always close" — an
+models are gripper-down at all times, so the two are always close", an
 assumption a 90-degree-symmetric object could break, with two members
 choosing alignments a quarter turn apart and the average landing 45 degrees
 from both. Measured, the members' yaw disagreement is **1.93 and 2.17
@@ -449,7 +449,7 @@ is also why no amount of ensembling fixes this.
 
 **Lateral offset at the close does not separate**, as recorded in S19, but
 at **descent onset** it does: 17.4 mm in the failing trial against 3.4 mm in
-the passing one. Both are true and they are not in conflict — by the time
+the passing one. Both are true and they are not in conflict, because by the time
 the fingers close, a failing trial has already shoved the block. The earlier
 measurement was taken at the wrong instant.
 
@@ -511,7 +511,7 @@ block at 44 degrees the aligned gripper yaw is +44, for a block at 46 it is
 
 A network regressing that under an L1 loss cannot represent the jump. It
 smears, and it smears exactly where the two branches are closest to equally
-likely — which is why the failure rate climbs monotonically from zero at
+likely, which is why the failure rate climbs monotonically from zero at
 0-15 degrees to 12.5% at 40-45, and why the resulting yaw errors are 12 to
 18 degrees rather than random.
 
@@ -523,7 +523,7 @@ discontinuous target.
 
 It retires a question the handover has carried since Stage 2:
 
-> **Multimodal task variant** — approach from left/right 50/50. The axis ACT
+> **Multimodal task variant.** Approach from left/right 50/50. The axis ACT
 > and diffusion were designed to differ on; the current single-mode task
 > cannot separate them on capability.
 
@@ -586,8 +586,8 @@ observation was noise.
 ### Wrong turn 3: the yaw error as the cause
 
 This is the important one. Isolating the four jams from the other two
-failure modes — one trial never commanded a close at all, one grasped and
-carried the block and failed the retreat — and measuring at descent onset:
+failure modes (one trial never commanded a close at all, one grasped and
+carried the block and failed the retreat) and measuring at descent onset:
 
 | quantity at descent onset | passing max (n=194) | the four jams | separates? |
 |---|---|---|---|
@@ -631,8 +631,8 @@ out which of those trials will jam.
 ### Why the wrist is under-rotated: the yaw is not in the pictures
 
 `PATH_TO_97.md` S3 is titled "The resolution hypothesis is dead. Measured,
-not argued." It is right about what it measured — the block's **position**
-is legible to 3.1 mm at 160x128 — and nobody measured its **yaw**.
+not argued." It is right about what it measured. The block's **position**
+is legible to 3.1 mm at 160x128, and nobody measured its **yaw**.
 
 Measured now, on the one view that cannot leak. Every episode starts with
 the arm at the same home keyframe, so with the arm there the only thing
@@ -649,7 +649,7 @@ orientations carry one label:
 | chance | 22.5 | | |
 
 **The block's yaw is not recoverable from these three camera views at the
-start of the approach, at either resolution.** Not weakly recoverable —
+start of the approach, at either resolution.** Not weakly recoverable, but at
 chance.
 
 That reframes the shrinkage rather than excusing it. A regressor that
@@ -728,7 +728,7 @@ clearance means it completes only if nothing else goes slightly wrong.
 Every jam has under 6 mm of clearance. Eleven trials in 200 are in that
 band and four of them jam: **36% against a 2% base rate, an eighteen-fold
 elevation.** It is the strongest predictor found in this session by a wide
-margin, and it is still not a determinant — three trials descend with
+margin, and it is still not a determinant, since three trials descend with
 *negative* computed clearance and succeed, because the policy keeps
 refining both quantities during the descent and because a lateral offset
 measured as a magnitude is the worst case rather than the component that
@@ -763,7 +763,7 @@ that being a deliverable here. It needs the block's lateral position, which
 the perception probe supplies to 3.1 mm, **and** its yaw, which is at chance
 from these cameras at both 160x128 and 320x256. And the action available on
 detection is a flush, which returns the same plan from the same
-observation — measured, across six configurations, as worth exactly zero.
+observation, measured across six configurations as worth exactly zero.
 
 ### What would actually move it
 
@@ -778,7 +778,7 @@ improve. The evidence says where the room is:
 * **`e`, the yaw error.** Not fixable from these three views, because the
   yaw is not in them. This is the first thing in this project to point at
   camera placement or a wrist view closer to the fingers rather than at the
-  policy — and it is the one lever `PATH_TO_97.md` S3 ruled out on position
+  policy, and it is the one lever `PATH_TO_97.md` S3 ruled out on position
   evidence without testing yaw.
 
 That is a concrete, quantitative pair of next steps derived from a measured
@@ -811,9 +811,9 @@ degrees.
 
 | trial | baseline | with the yaw corrected | clearance budget |
 |---|---|---|---|
-| seed 61 trial 18 | jam | **fixed** | extent 29.69 mm — snapping buys 7.7 mm |
-| seed 91 trial 37 | failed the retreat | **fixed** | — |
-| seed 61 trial 23 | jam | still a jam | extent 22.29 mm at 0.8 deg — snapping buys **0.3 mm** |
+| seed 61 trial 18 | jam | **fixed** | extent 29.69 mm, snapping buys 7.7 mm |
+| seed 91 trial 37 | failed the retreat | **fixed** | n/a |
+| seed 61 trial 23 | jam | still a jam | extent 22.29 mm at 0.8 deg, snapping buys **0.3 mm** |
 | seed 92 trial 11 | jam | still a jam | clearance −3.49 mm; snapping buys 4.0, still marginal |
 | seed 92 trial 21 | jam | still a jam | |
 | seed 91 trial 25 | never closed | still never closes | |
@@ -827,7 +827,7 @@ term, exactly as the budget says. The two that remain include the 0.8
 degree case, for which a perfect yaw is worth a third of a millimetre.
 
 And four trials that worked are broken, all of them with a healthy 85 to 92
-mm lift — so the grasp still succeeded and what failed was the shape of the
+mm lift, so the grasp still succeeded and what failed was the shape of the
 trajectory or the release. Overwriting the commanded orientation walks the
 policy off the distribution it was trained on, and it pays for the two
 rescues with four new failures at a different gate.
@@ -876,7 +876,7 @@ What it does change is the best estimate. Over 2,400 trials on 24 seeds the
 policy is at **96.38%, 95% CI 95.63 to 97.12**. The interval still contains
 97% at its upper edge, and the point estimate is below it. The honest
 headline is **96.4% over 2,400 trials**, not 97.0%, and `PATH_TO_97.md`'s
-own qualification — "the claim is approximately 97%, not provably above" —
+own qualification, "the claim is approximately 97%, not provably above",
 reads better in hindsight than the number next to it.
 
 It is worth being precise about what went wrong and what did not. Nothing
@@ -949,8 +949,8 @@ directions.
    failure: `clearance = 40 - (lateral offset + 22(cos e + sin e))`, and
    every jam in 200 trials sits under 6 mm of it against a median of 12.
 3. It is governed by **two** terms that trade off, which is why four
-   separate single-variable explanations — timing, lateral offset, symmetry
-   boundary, wrist yaw — each looked right on a handful of trials and each
+   separate single-variable explanations (timing, lateral offset, symmetry
+   boundary, wrist yaw) each looked right on a handful of trials and each
    failed at scale.
 4. The block's **yaw is not in the images** at the start of the approach, at
    either 160x128 or 320x256. `PATH_TO_97.md` S3 ruled resolution out on
@@ -1004,7 +1004,7 @@ pick up.
 
 There is no video of a recovery, because there are none to record. The
 grasp-failure detector fires on exactly the right trials and the policy
-never recovers from any of them — see the table in S21.
+never recovers from any of them. See the table in S21.
 
 Regenerate with:
 
@@ -1053,7 +1053,7 @@ clearances differ by only 2.88 mm. What differs is the worst case:
 The oracle's yaw error is zero at every percentile, which is what a
 demonstrator that computes the alignment from the block's pose looks like
 and confirms the label audit in S23 from the other direction. Its lateral
-offset is not zero — it is jittered deliberately — but its worst is half
+offset is not zero, since it is jittered deliberately, but its worst is half
 the student's.
 
 ### What this settles
@@ -1069,7 +1069,7 @@ the student's.
    doing better than curve-fitting.
 3. **Both terms have to improve, and only one of them can.** The student's
    lateral maximum is 9.8 mm worse than the teacher's and its yaw maximum
-   is 33 degrees worse. The lateral term is learnable — position is legible
+   is 33 degrees worse. The lateral term is learnable, because position is legible
    to 3.1 mm. The yaw term is not, from these three views, at either
    resolution tested. So an auxiliary position target is the right next
    run, and it is not sufficient on its own.
@@ -1110,7 +1110,7 @@ independently respected by a second, unseen one.
 **The ensemble's advantage over a single policy.** Ensembling raised the p5
 clearance by 3.25 mm, from 1.83 to 5.08, and the jam count did not move:
 **four jams in 200 either way.** The five points ensembling gained came
-almost entirely from somewhere else — trials that grasped the block and
+almost entirely from somewhere else. Trials that grasped the block and
 then failed later fell from **12 to 1**.
 
 So the previous session's account of why ensembling worked, that two
@@ -1146,8 +1146,8 @@ has a clearance above 6 mm, and the demonstrator never goes there.
 
 The metric to score a training run against is the **fifth-percentile
 clearance**, because a success rate cannot resolve a point without
-thousands of trials — S27 watched two clean 1,200-trial measurements of one
-unchanged policy land 1.25 points apart — whereas p5 clearance is a
+thousands of trials (S27 watched two clean 1,200-trial measurements of one
+unchanged policy land 1.25 points apart), whereas p5 clearance is a
 continuous quantity measurable on 200 and it spans 1.83 to 11.94 across
 policies whose success rates span 92 to 99.75.
 
@@ -1180,8 +1180,8 @@ Five monitor-mode runs, 2,000 trials in total, spanning success rates from
 
 It supports using p5 clearance as the signal a training run is scored on
 **instead of** a success rate, for changes of the size a retrain produces.
-The range is wide — 1.83 to 11.94 mm across policies spanning eight points
-of success — so a real improvement should be unmistakable.
+The range is wide, 1.83 to 11.94 mm across policies spanning eight points
+of success, so a real improvement should be unmistakable.
 
 Two honest limits.
 
@@ -1191,8 +1191,8 @@ students alone is weaker, Spearman 0.8 on four points. Five runs is five
 runs.
 
 **It does not resolve differences under about a point.** The two fresh
-600-trial seed sets differ by 0.84 points of success rate — 96.17% against
-95.33% — and p5 clearance orders them the *wrong way round*, 3.91 mm
+600-trial seed sets differ by 0.84 points of success rate, 96.17% against
+95.33%, and p5 clearance orders them the *wrong way round*, 3.91 mm
 against 3.99. An 0.08 mm difference in a fifth percentile estimated from
 600 trials is noise, and so is an 0.84-point difference in a success rate
 from the same trials. Neither metric can see a difference that small, which
@@ -1249,8 +1249,8 @@ teaches the arm to do something that did not work.
 
 Had the run gone ahead, an aux model that underperformed would have had two
 explanations and no way to separate them. `PATH_TO_97.md` S13 already
-records what that costs — "DAgger fine-tuning made it much worse, and the
-experiment was confounded" — so the conversion was thrown away and redone
+records what that costs, "DAgger fine-tuning made it much worse, and the
+experiment was confounded", so the conversion was thrown away and redone
 with `--exclude-failed`. Ninety minutes against four hours of an
 uninterpretable result.
 
@@ -1275,7 +1275,7 @@ baseline's is the two extra action columns.
    zero yaw error by construction; the student cannot, because the
    information is not in its images.
 
-If prediction 1 fails — if the p5 clearance does not move — then the
+If prediction 1 fails, if the p5 clearance does not move, then the
 lateral error is not a representation problem either, and the budget's
 remaining explanation is the yaw term alone, which would make camera
 placement the only lever left in the project.
@@ -1292,7 +1292,7 @@ The run S33 launched, scored against the four predictions written before it.
 |---|---|---|---|---|---|---|
 | `act_oracle_v2` @30k, the baseline | 92.00% | 1.83 mm | **−12.87 mm** | 35 of 200 | 4 | 12 |
 | `act_aux_xy` @30k | 93.50% | **6.33 mm** | +1.41 mm | 8 of 200 | 5 | 8 |
-| `act_aux_xy` @25k | — | 5.46 mm | +1.15 mm | 12 of 200 | 3 | 4 |
+| `act_aux_xy` @25k | n/a | 5.46 mm | +1.15 mm | 12 of 200 | 3 | 4 |
 
 | # | prediction | outcome |
 |---|---|---|
@@ -1303,7 +1303,7 @@ The run S33 launched, scored against the four predictions written before it.
 
 The lateral term moved exactly as designed. Maximum lateral offset fell
 from **29.75 mm to 14.38**, and the clearance minimum went from −12.87 mm
-to **+1.41** — the negative tail that produced the jams is gone.
+to **+1.41**, and the negative tail that produced the jams is gone.
 
 **Prediction 2 failed for an instructive reason.** The yaw got worse:
 median commanded yaw error 2.31° to 4.10°, p95 6.04° to 10.96°. Two extra
@@ -1316,7 +1316,7 @@ clearance.
 
 Screening on seeds 61 and 62, 40 trials per checkpoint: 86.25% at 20k,
 **100.00% at 25k**, 96.25% at 27.5k. On never-used seeds 121-124 the 25k
-checkpoint scores **96.50%**, a 3.5-point regression — squarely inside the
+checkpoint scores **96.50%**, a 3.5-point regression, squarely inside the
 5-to-7-point sweep tax this project has now measured five times.
 
 ### The finding that mattered: the failures are disjoint
@@ -1346,7 +1346,7 @@ What is significant is *where* each fails, and this is not a rate:
 | aux | **3.7, 12.2, 12.6, 17.3, 17.3, 21.1, 30.6** |
 
 The baseline fails where the wrist has furthest to turn, exactly as S24 and
-S25 describe. The aux policy fails nowhere near there — it has eliminated
+S25 describe. The aux policy fails nowhere near there. It has eliminated
 that mode and acquired a different one at low yaw offsets. **Zero trials in
 200 are failed by both.**
 
@@ -1400,7 +1400,7 @@ against the oracle's 0.991.
 |---|---|---|---|---|
 | `act_oracle_v2` alone | 92.00% | 1.83 mm | 17.50% | 4 / 200 |
 | old ensemble, v2 + r34 | 97.00% | 5.08 mm | 6.00% | 4 / 200 |
-| **new ensemble, v2 + aux_xy** | **98.83%** | **7.08–7.32 mm** | 2.50–3.00% | 6 / 1,200 |
+| **new ensemble, v2 + aux_xy** | **98.83%** | **7.08 to 7.32 mm** | 2.50 to 3.00% | 6 / 1,200 |
 | scripted demonstrator | 99.70% | 11.94 mm | 0.00% | 0 / 400 |
 
 Monotone in both directions across four policies and a 7.7-point range of
@@ -1415,8 +1415,8 @@ rate could confirm it.
 aux-supervised policy emits a 10-vector, a plain one an 8-vector, and
 `np.stack` raised `ValueError: all input arrays must have the same shape`
 several frames deep, naming nothing. The auxiliary columns are a training
-target and never an action — the harness reads `action[:3]`, `[3:7]` and
-`[7]` and ignores the rest — so the members are now truncated to eight
+target and never an action, since the harness reads `action[:3]`, `[3:7]`
+and `[7]` and ignores the rest, so the members are now truncated to eight
 dimensions before averaging.
 
 ### What is left

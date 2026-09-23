@@ -41,7 +41,7 @@ measurable at all.
 sequence is complete: block delivered and resting, fingers open, tool
 climbed and back within 60 mm of home. The old harness broke out of the loop
 the instant `check_success` fired, which made episode length meaningless and
-meant the entire retreat — a third of what a demonstration contains — was
+meant the entire retreat, a third of what a demonstration contains, was
 never simulated and never scored.
 
 **The settle holds the last commanded gripper** rather than forcing the
@@ -61,7 +61,7 @@ passes**:
 | trajectory score against own profile | min 0.856, 100% at or above 0.85 |
 
 A gate tighter than that would be rejecting behaviour a human actually
-performed. An earlier version of this file used the p10–p90 length band and
+performed. An earlier version of this file used the p10 to p90 length band and
 did exactly that; see `docs/PATH_TO_97.md` section S2.
 
 ## Validation
