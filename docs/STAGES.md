@@ -326,7 +326,8 @@ approaches, which Stage 0 identified as 62% of ACT's failures. Eleven
 training runs later the teacher is the scripted oracle from Stage 0, which
 outperforms every learned policy on every dimension that matters.
 
-Full account in [docs/RL_PROCESS.md](RL_PROCESS.md). Summary here.
+Full account in [docs/RL_PROCESS.md](RL_PROCESS.md), run-by-run log in
+[docs/STAGE2_TRAJECTORY_LOG.md](STAGE2_TRAJECTORY_LOG.md). Summary here.
 
 | | oracle | best RL teacher | demonstrations |
 |---|---|---|---|

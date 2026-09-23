@@ -48,19 +48,9 @@ select = ["E", "F", "I", "UP", "B"]
 ignore = ["E501"]
 
 [tool.ruff.lint.isort]
-# Pin `src` as first-party instead of letting ruff infer it.
-#
-# Ruff infers first-party membership from the filesystem, so its answer
-# depended on something that should never have varied: `.gitignore`
-# contained an unanchored `data/`, which swallowed `src/data/` and left it
-# uncommitted. On this machine the directory exists and ruff calls
-# `from src.data.task import ...` first-party. On a fresh clone it does not
-# exist, so ruff calls it third-party and wants it moved up beside `mujoco`
-# and `numpy` -- 15 I001 errors that a local run had just passed.
-#
-# The missing directory is fixed. This line stays because an explicit
-# classification cannot drift with the filesystem, and because the failure
-# it produced was a lint error pointing at the wrong thing entirely.
+# Pin `src` as first-party rather than letting ruff infer it. Inference reads
+# the filesystem, so import classification would otherwise vary between a
+# working tree and a fresh clone.
 known-first-party = ["src"]
 
 [tool.pytest.ini_options]

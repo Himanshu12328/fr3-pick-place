@@ -1,22 +1,13 @@
-# Every pattern that names a top-level directory is anchored with a leading
-# slash, and that is not cosmetic.
-#
-# An unanchored `data/` matches a directory called `data` at *any* depth, so
-# it silently swallowed `src/data/` — and `src/data/task.py`, which holds
-# the block randomisation, the place target and `check_success`, was never
-# committed. A fresh clone of this repository could not import `src.data`,
-# so it could not run anything, for as long as the pattern existed. CI would
-# have caught it on the first push; CI had been disabled since August.
-#
-# Keep the anchors. The patterns that are meant to match anywhere — caches,
-# editor directories — are deliberately left unanchored below.
+# Patterns naming a top-level directory are anchored with a leading slash.
+# Unanchored, `data/` would also match `src/data/`, which is source and must
+# be tracked. Cache and editor patterns are left unanchored deliberately, so
+# they match at any depth.
 
 # Virtual environment
 /.venv/
 
 # Third-party assets
 /mujoco_menagerie/
-/graphify-out/
 
 # Data and outputs — large, regenerable
 /data/
@@ -27,13 +18,16 @@
 # Generated scene (rebuild with build_scene.py)
 /models/
 
-# Python — these may appear at any depth
+# Python and tool caches — these may appear at any depth
 __pycache__/
 *.pyc
 *.egg-info/
+.pytest_cache/
+.ruff_cache/
 
 # Local agent tooling
 /.claude/
+/graphify-out/
 
 # Editor — may appear at any depth
 .vscode/

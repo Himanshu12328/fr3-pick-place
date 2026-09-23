@@ -1,17 +1,6 @@
-# Normalise text files to LF in the working tree, not just in the
-# repository.
-#
-# git's autocrlf otherwise checks out CRLF on Windows while storing LF, so
-# every commit prints a "LF will be replaced by CRLF" warning and any tool
-# that hashes or diffs file bytes sees something different locally than CI
-# does. Keeping the working tree at LF removes a whole class of "it passes
-# here and fails there" without costing anything on Windows, where every
-# editor in use handles LF.
-#
-# This was added while chasing a lint result that differed between this
-# machine and CI. Line endings turned out **not** to be the cause — the
-# cause was `.gitignore` swallowing `src/data/` — but matching the
-# repository in the working tree is worth doing on its own.
+# Normalise text files to LF in the working tree, not only in the repository,
+# so byte-level tooling (hashing, diffing, linters) sees the same content on
+# Windows as it does in CI.
 * text=auto eol=lf
 
 # Binary, never touched.
