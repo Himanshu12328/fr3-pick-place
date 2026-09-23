@@ -791,7 +791,7 @@ Use fresh seeds to report it.
 | Milestone | Predicted | Measured |
 |---|---|---|
 | Stage 1, temporal ensembling | 86 to 90% | no gain |
-| Stage 2, teacher (privileged) | — | **100%**, the scripted oracle |
+| Stage 2, teacher (privileged) | n/a | **100%**, the scripted oracle |
 | Stage 3, DAgger distillation | 92 to 97% | **76%**, negative |
 | Stage 3b, oracle data at scale | 88 to 93% | **86.8%** loose, just under |
 | Stage 3e, corrected labels | 80 to 88% strict | **92.3%** strict, over |
@@ -808,7 +808,7 @@ four gates, and the estimate was low by 15 points.
 **The strict criterion did not change what the environment permits.** The
 oracle still solves the task 600 times out of 600 under the loose criterion
 and 97.5% of the time under the strict one with jitter applied. Every
-remaining point is a policy problem, not a physics one — but the teacher is
+remaining point is a policy problem, not a physics one, but the teacher is
 now only 5 points ahead of the student rather than 27, so the remaining work
 is matching it rather than replacing it.
 

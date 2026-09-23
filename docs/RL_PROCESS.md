@@ -117,7 +117,7 @@ Caught the same way. Fixed by paying it once per episode, which is why
 `grasped_once` is threaded through from the environment rather than derived
 from the previous step alone.
 
-### 3. Shoving — reached a reported 99.0%
+### 3. Shoving, which reached a reported 99.0%
 
 After the first two fixes every per-step term was negative and every bonus
 was one-time, which felt airtight. It was not.
@@ -142,7 +142,7 @@ Fixed with two guards, since one had already proven insufficient: the
 completion bonus requires a genuine lift, and any block motion while the
 block is not held costs 100 per metre.
 
-### 4. Never releasing — reached a reported 99.8%
+### 4. Never releasing, which reached a reported 99.8%
 
 The shoving fix worked: picked-and-placed went from ~33% to 99.3%. But
 plotting block height against time showed the block ending in mid-air.
@@ -265,7 +265,7 @@ score.
 | v1 | first reward | 99.0% raw, **shoving in 2/3 of episodes** |
 | v2 | shove guards | 99.8% raw, **never released the gripper** |
 | v3 | release required | **98.8% settled**, trajectory nothing like the demos |
-| v4 | trajectory shaping + retreat phase | **0–5%**, shut the gripper on step 0 |
+| v4 | trajectory shaping + retreat phase | **0 to 5%**, shut the gripper on step 0 |
 | v5 | RLPD fix | killed at 100k; demo buffer found 20× undersized |
 | v6 | demo buffer sized correctly | **97.8% settled**, trajectory score 0.507 |
 | v7 | heavier speed weights | abandoned, worse than v6 at the same point |
@@ -354,7 +354,7 @@ much in the buffer as in the weights, and reloading against an empty buffer
 re-enters the warmup phase. `ResumableCheckpoint` writes both.
 
 **Throughput.** 20 workers reach 4,753 environment steps per second with no
-rendering, but SAC training runs at 150–235 because gradient steps are the
+rendering, but SAC training runs at 150 to 235 because gradient steps are the
 constraint, not the simulator.
 
 ---
@@ -366,12 +366,12 @@ outperforms every learned teacher on every dimension that matters.
 
 | | oracle | best RL teacher (v6) | demos |
 |---|---|---|---|
-| success, 600 trials | **100.0%** | 97.8% | — |
-| retreated properly | **100.0%** | partial | — |
+| success, 600 trials | **100.0%** | 97.8% | n/a |
+| retreated properly | **100.0%** | partial | n/a |
 | trajectory score | **0.991** | 0.507 | 1.0 |
 | episode length | 284 | 80 | 295 |
 | carry speed | 2.74 | 7.25 | 3.27 |
-| block nudged after release | **0.06 mm** | — | — |
+| block nudged after release | **0.06 mm** | n/a | n/a |
 
 Every trajectory metric except retreat speed is a perfect band match.
 
@@ -464,12 +464,12 @@ mid-air.
 
 | | oracle | best RL teacher | demonstrations |
 |---|---|---|---|
-| success, 600 trials | **100.0%** | 97.8% | — |
-| retreated properly | **100.0%** | partial | — |
+| success, 600 trials | **100.0%** | 97.8% | n/a |
+| retreated properly | **100.0%** | partial | n/a |
 | trajectory score | **0.991** | 0.507 | 1.0 |
 | episode length | 284 | 80 | 295 |
 | carry speed | 2.74 | 7.25 | 3.27 |
-| block nudged after release | **0.06 mm** | 17.4 mm | — |
+| block nudged after release | **0.06 mm** | 17.4 mm | n/a |
 
 ### What the RL work produced anyway
 

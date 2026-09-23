@@ -51,7 +51,7 @@ this changes only what the policy trains on, not what it is scored on.
 | ACT | 20,000 steps | **83.5% ± 4.2%** | 80 / 80 / 90 / 80 / 86 / 85 |
 | Diffusion Policy | 50,000 steps | **83.2% ± 4.4%** | 83 / 81 / 78 / 89 / 80 / 88 |
 
-**The near-region gap closed for both policies — reversed for ACT, flattened for diffusion.**
+**The near-region gap closed for both policies, reversed for ACT and flattened for diffusion.**
 
 | Region | ACT, 151 eps | ACT, 221 eps | Diffusion, 151 eps | Diffusion, 221 eps |
 |---|---|---|---|---|
@@ -59,7 +59,7 @@ this changes only what the policy trains on, not what it is scored on.
 | x ≥ 0.53 m (far) | 82.1% (n=391) | 80.7% (n=362) | 78.5% (n=391) | 83.7% (n=362) |
 | gap | -14.2 | **+7.1** | -20.6 | **-1.3** |
 
-Adding 70 episodes to only the near region moved only the near region — the
+Adding 70 episodes to only the near region moved only the near region. The
 far side held steady within noise for both policies. That is close to a
 controlled experiment for "was this a coverage problem," and the answer is
 yes, not a control-geometry limit.
@@ -88,8 +88,8 @@ established below.
 | 221 episodes | **83.5% ± 4.2%** | **83.2% ± 4.4%** |
 
 Doubling the dataset from 71 to 151 moved both policies. ACT gained 18.5
-points and diffusion gained 8.6. Going from 151 to 221 — mostly a targeted
-addition to one region rather than general coverage — moved ACT a further
+points and diffusion gained 8.6. Going from 151 to 221, mostly a targeted
+addition to one region rather than general coverage, moved ACT a further
 6.3 points and diffusion 11.9. Diffusion gained more from the same 70
 episodes, consistent with its pre-intervention near-region deficit being
 larger to begin with (20.6 points against ACT's 14.2).
@@ -105,8 +105,8 @@ very little.
 ![ACT success vs training step, 151 episodes](sweep_act_v3.png)
 
 The diffusion counterpart of that plot was referenced by the README for
-months as `sweep_diffusion_v3.png` and has never been in the repository —
-only the v2 and v4 sweeps were committed. The reference is removed rather
+months as `sweep_diffusion_v3.png` and has never been in the repository.
+Only the v2 and v4 sweeps were committed. The reference is removed rather
 than pointed at a different run's plot, which would mislabel it. The
 numbers it showed are in the table above.
 
@@ -144,14 +144,14 @@ seeds it scored 41.9, 44.4, 50.0, 69.0, 71.0 and 77.8 percent. That is a
 depending on which placements it draws is not one to deploy.
 
 There were two possible causes, needing different fixes. The near region
-may simply have been under-represented — the block distribution is centred
+may simply have been under-represented, since the block distribution is centred
 at x = 0.55 while the split sits at 0.53, so only about 35% of placements
 fell below it. Or the near region may be harder to control, since the arm
 folds in closer to the base there.
 
 **Resolved: it was coverage, not control geometry, for both policies.** See
 [221 demonstrations, near-region bias](#221-demonstrations-near-region-bias)
-above — 70 episodes collected with `--bias-near` took ACT's near-region
+above, 70 episodes collected with `--bias-near` took ACT's near-region
 success from 67.9% to 87.8% and diffusion's from 57.9% to 82.4%, while the
 untouched far region held steady for both. Diffusion's near-region result
 was also wildly unstable before (36-point spread across seeds) and is not

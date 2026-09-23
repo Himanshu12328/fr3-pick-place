@@ -69,8 +69,8 @@
 * [x] Stage 4. Closed the gap to 97%. Three architecture and horizon
       variants all plateaued at 90 to 93 percent, so capacity and chunk
       length are not the constraint. What worked was that two of them fail
-      in *different places* — ResNet18 is 6.8 points better near the base,
-      ResNet34 5.4 points better far from it, on identical data — so
+      in *different places*. ResNet18 is 6.8 points better near the base and
+      ResNet34 5.4 points better far from it, on identical data, so
       averaging their target poses, and voting rather than averaging the
       binary gripper, removes the regional weakness entirely.
       **97.0% strict over 1,200 trials, 95% CI 96.0 to 98.0**
@@ -84,8 +84,8 @@
       trials**, not the 97.5% a 40-trial sample had reported, so the
       student is 2.7 points behind it and the gap is the student's. The
       residual failure is a wrist-yaw error that is *proportional* to the
-      rotation the block requires — `error = 0.115 × offset`, holding
-      across every bin from 0 to 45 degrees — which jams the descent on the
+      rotation the block requires (`error = 0.115 × offset`, holding
+      across every bin from 0 to 45 degrees), which jams the descent on the
       block's top face. A runtime layer that refuses the mistimed close and
       forces a replan was built and measured in six configurations: **all
       six score 97.00% and fail the same six trials.** See
@@ -98,7 +98,7 @@
       higher image resolution for block *position*. What has not been tried
       is a policy whose orientation target is not a discontinuous function
       of a symmetric object's pose
-* [x] A multimodal task variant — **it turns out the task was already
+* [x] A multimodal task variant. **It turns out the task was already
       multimodal and nobody had noticed.** A cube is symmetric every 90
       degrees, so four wrist orientations grasp it equally well and the
       absolute yaw label is a sawtooth in the block's yaw. This is the axis
